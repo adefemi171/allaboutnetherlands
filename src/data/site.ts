@@ -19,6 +19,15 @@ export const owner = {
   email: "adefemi@runeward.io",
 };
 
+/** Other sites by the same maker, shown at the foot of every page. */
+export const alsoBy = [
+  {
+    href: "https://compears.shop/",
+    name: "Compears",
+    what: "compare supermarket prices",
+  },
+];
+
 export const nav = [
   { href: "/guides/", label: "Guides" },
   { href: "/map/", label: "Map" },

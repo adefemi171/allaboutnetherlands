@@ -1,6 +1,6 @@
 ---
 import Subscribe from "./Subscribe.astro";
-import { footerNav, nav, owner, site } from "../data/site";
+import { alsoBy, footerNav, nav, owner, site } from "../data/site";
 ---
 
 <footer class="site-footer">
@@ -43,5 +43,12 @@ import { footerNav, nav, owner, site } from "../data/site";
   </div>
   <p class="wrap site-footer__by">
     Made by {owner.name} · <a href="/contact/">{owner.email}</a>
+    {
+      alsoBy.map((other) => (
+        <>
+          {" · "}Also by us: <a href={other.href}>{other.name}</a>, {other.what}
+        </>
+      ))
+    }
   </p>
 </footer>
