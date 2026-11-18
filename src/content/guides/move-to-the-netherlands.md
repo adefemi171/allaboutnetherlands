@@ -64,6 +64,7 @@ This checklist is for anyone moving to the Netherlands for more than 4 months, t
 2. **Take out Dutch health insurance.** If you have to insure yourself here, do it no later than 4 months after you arrive. If you are on time, the cover counts from the day you arrived. If you are late, you are not covered for the time before, and you can be fined. See [Health insurance](/guides/health-insurance/).
 3. **Apply for a DigiD.** This is your login for government websites, including the tax office and the rent tribunal. You need a BSN, a registered address and a mobile phone. The activation code comes by post to your registered address. The Dutch DigiD page says the letter is sent within 5 working days. The English page says within 3 business days in one place and within a maximum of 5 working days in another. Count on up to 5 working days. See [DigiD](/guides/digid/).
 4. **Apply for the 30% ruling.** You and your employer apply together. Do it within 4 months of your first working day, so that it counts from the start. See [The 30% ruling](/guides/30-percent-ruling/).
+5. **Learn how the supermarket works.** You pay a deposit on bottles and cans, plastic bags are never free, and supermarkets do not sell spirits or tobacco. Compare the price per kilo or litre, not the pack price. See [Do your grocery shopping](/guides/groceries/).
 
 ## What depends on what
 
