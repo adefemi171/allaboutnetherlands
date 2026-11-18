@@ -23,7 +23,7 @@ export const owner = {
 export const alsoBy = [
   {
     href: "https://compears.shop/",
-    name: "Compears",
+    name: "Compear",
     what: "compare supermarket prices",
   },
 ];

@@ -117,7 +117,7 @@ Compare the unit price, not the price of the pack. Packs come in different sizes
 
 ## Compare supermarket prices
 
-Compears ([compears.shop](https://compears.shop)) is a website that compares supermarket prices. It is made by Runeward Labs, the same maker as this site.
+Compear ([compears.shop](https://compears.shop)) is a website that compares supermarket prices. It is made by Runeward Labs, the same maker as this site.
 
 - It compares prices per litre, per kilogram or per piece, and keeps different units apart. This is the same unit-price idea as above, across shops.
 - You can scan a product's barcode.
