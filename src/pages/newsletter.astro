@@ -1,0 +1,93 @@
+---
+import Subscribe from "../components/Subscribe.astro";
+import { owner } from "../data/site";
+import Base from "../layouts/Base.astro";
+
+// Issues that have gone out, newest first. Add one here when it is sent.
+const issues: { title: string; date: string; summary: string; url: string }[] = [];
+---
+
+<Base
+  title="Newsletter"
+  description="The All About Netherlands newsletter: what changed in Dutch rules for people moving here, and which guides are new or updated."
+>
+  <main id="main" class="wrap page">
+    <header>
+      <p class="mono">Newsletter</p>
+      <h1>What changed, in one email</h1>
+      <p class="page__lede">
+        Dutch rules move. Amounts are set again each January, and often in
+        July too. The newsletter says what changed for people who are moving
+        to the Netherlands or have just arrived, and which guides are new
+        or were updated.
+      </p>
+    </header>
+
+    <div class="page__body">
+      <section class="signup">
+        <h2>Sign up</h2>
+        <Subscribe id="newsletter" />
+      </section>
+
+      <section>
+        <h2>What is in it</h2>
+        <ul>
+          <li>Rules and amounts that changed, with a link to the official page.</li>
+          <li>Guides that are new, and guides that were corrected.</li>
+          <li>Dates that are coming up, such as deadlines for tax and insurance.</li>
+        </ul>
+        <p>
+          No advertising. An issue goes out when there is something to
+          say. Signing up opens your mail program, addressed to
+          {" "}{owner.email}, with the request filled in.
+        </p>
+      </section>
+
+      <section>
+        <h2>Past issues</h2>
+        {
+          issues.length ? (
+            <ol class="issues">
+              {issues.map((issue) => (
+                <li>
+                  <h3>
+                    <a href={issue.url}>{issue.title}</a>
+                  </h3>
+                  <p class="mono">{issue.date}</p>
+                  <p>{issue.summary}</p>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p>
+              No issue has gone out yet. They will be listed here once they
+              have.
+            </p>
+          )
+        }
+      </section>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .signup {
+    padding: 1.4rem 1.5rem 1.5rem;
+    border: 1px solid var(--line);
+    border-top: 4px solid var(--signal);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .issues {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .issues li {
+    padding: 0.9rem 0 0.8rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .issues h3 {
+    font-size: 1.15rem;
+  }
+</style>

@@ -1,0 +1,126 @@
+---
+import Base from "../layouts/Base.astro";
+import { owner, site } from "../data/site";
+
+const mail = `mailto:${owner.email}`;
+---
+
+<Base
+  title="Contact"
+  description="How to reach the people behind All About Netherlands: report a mistake, suggest a guide, ask about the site, or propose working together."
+>
+  <main id="main" class="wrap page">
+    <header>
+      <p class="mono">Contact</p>
+      <h1>Get in touch</h1>
+      <p class="page__lede">
+        {site.name} is made by {owner.name}. Write to
+        <a href={mail}>{owner.email}</a>.
+      </p>
+    </header>
+
+    <div class="page__body">
+      <section>
+        <h2>You can write to</h2>
+        <dl class="reasons">
+          <div>
+            <dt>Report a mistake</dt>
+            <dd>
+              A fact that is wrong, a rule that has changed, a dead link,
+              something odd on the map. The quickest way is the form, which
+              also works from the page the mistake is on.
+              <button class="text-button" type="button" data-report-open>
+                Report a problem
+              </button>
+            </dd>
+          </div>
+          <div>
+            <dt>Suggest something</dt>
+            <dd>
+              A guide that is missing, a step that was unclear, a place the
+              map should name. Say what you were looking for and did not
+              find.
+            </dd>
+          </div>
+          <div>
+            <dt>Say how it went</dt>
+            <dd>
+              If a guide got you through the town hall, or did not, it
+              helps to hear which one.
+            </dd>
+          </div>
+          <div>
+            <dt>Work together</dt>
+            <dd>
+              Press, partnerships and business questions go to the same
+              address.
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <section>
+        <h2>Questions about your own case</h2>
+        <p>
+          The site cannot give legal, tax or immigration advice, and cannot
+          say what will happen with your application. For that, ask the
+          organisation that decides: the
+          <a href="https://ind.nl/en/service-and-contact" rel="noopener">IND</a>
+          for residence permits, the
+          <a href="https://www.belastingdienst.nl/wps/wcm/connect/en/individuals/individuals" rel="noopener">Belastingdienst</a>
+          for tax and allowances, and your municipality for registration.
+          Each <a href="/guides/">guide</a> links to the official pages it is
+          based on.
+        </p>
+      </section>
+
+      <section>
+        <h2>Contact information</h2>
+        <dl class="facts">
+          <div>
+            <dt>Made by</dt>
+            <dd>{owner.name}</dd>
+          </div>
+          <div>
+            <dt>Email</dt>
+            <dd><a href={mail}>{owner.email}</a></dd>
+          </div>
+          <div>
+            <dt>Updates</dt>
+            <dd><a href="/newsletter/">The newsletter</a></dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .reasons,
+  .facts {
+    margin: 0;
+    border-top: 4px solid var(--text);
+  }
+  .reasons div,
+  .facts div {
+    display: grid;
+    grid-template-columns: 11rem 1fr;
+    gap: 0.2rem 1.2rem;
+    padding: 0.8rem 0 0.7rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .reasons dt,
+  .facts dt {
+    font-weight: 700;
+  }
+  .reasons dd,
+  .facts dd {
+    margin: 0;
+  }
+  @media (max-width: 560px) {
+    .reasons div,
+    .facts div {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

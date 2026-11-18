@@ -1,0 +1,183 @@
+---
+// The guides drawn as a line with stops, in the order you need them:
+// one stretch of line per stage of the move.
+import { getCollection } from "astro:content";
+import { stages, type Stage } from "../data/site";
+
+interface Props {
+  /** Heading level for the stage names. */
+  level?: 2 | 3;
+}
+const { level = 3 } = Astro.props;
+const Heading = `h${level}` as "h2" | "h3";
+
+const guides = (await getCollection("guides")).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+const stretches = (Object.keys(stages) as Stage[])
+  .map((stage) => ({
+    stage,
+    ...stages[stage],
+    guides: guides.filter((guide) => guide.data.stage === stage),
+  }))
+  .filter((stretch) => stretch.guides.length > 0);
+---
+
+<div class="route">
+  {
+    stretches.map((stretch) => (
+      <section class="route__stretch" aria-labelledby={`stage-${stretch.stage}`}>
+        <header class="route__stage">
+          <Heading id={`stage-${stretch.stage}`}>{stretch.label}</Heading>
+          <p class="mono">{stretch.hint}</p>
+        </header>
+        <ol class="route__stops">
+          {stretch.guides.map((guide) => (
+            <li>
+              <a class="stop" href={`/guides/${guide.id}/`}>
+                <span class="stop__number mono" aria-hidden="true">
+                  {String(guide.data.order).padStart(2, "0")}
+                </span>
+                <span class="stop__title">{guide.data.title}</span>
+                <span class="stop__summary">{guide.data.summary}</span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </section>
+    ))
+  }
+</div>
+
+<style>
+  .route {
+    --rail: 1.1rem; /* distance from the left edge to the middle of the line */
+    --track: 4px; /* thickness of the line */
+    position: relative;
+  }
+  .route__stretch {
+    position: relative;
+    padding-left: calc(var(--rail) * 2 + 0.6rem);
+  }
+  /* The line itself. It runs through every stretch without a break. */
+  .route__stretch::before {
+    content: "";
+    position: absolute;
+    left: calc(var(--rail) - var(--track) / 2);
+    top: 0;
+    bottom: 0;
+    width: var(--track);
+    background: var(--route);
+  }
+  .route__stretch:first-child::before {
+    top: 0.75rem;
+    border-radius: 2px 2px 0 0;
+  }
+  .route__stretch:last-child::before {
+    bottom: 2.2rem;
+    border-radius: 0 0 2px 2px;
+  }
+
+  /* A stage is an interchange: a larger ring on the line. */
+  .route__stage {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.2rem 0.8rem;
+    padding: 0.1rem 0 0.9rem;
+  }
+  .route__stretch + .route__stretch .route__stage {
+    padding-top: 1.6rem;
+  }
+  .route__stage::before {
+    content: "";
+    position: absolute;
+    left: calc(-1 * (var(--rail) + 0.6rem) - 0.6rem);
+    bottom: 1.05rem;
+    width: 1.2rem;
+    height: 1.2rem;
+    border: var(--track) solid var(--route);
+    border-radius: 50%;
+    background: var(--bg);
+  }
+  .route__stage :is(h2, h3) {
+    font-size: 1.5rem;
+  }
+
+  .route__stops {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .stop {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.1rem 0.8rem;
+    padding: 0.95rem 0.5rem 0.95rem 0;
+    border-top: 1px solid var(--line);
+    color: var(--text);
+    text-decoration: none;
+  }
+  /* A stop is a tick across the line. */
+  .stop::before {
+    content: "";
+    position: absolute;
+    left: calc(-1 * (var(--rail) + 0.6rem) - 0.45rem);
+    top: 1.45rem;
+    width: 0.9rem;
+    height: var(--track);
+    border-radius: 2px;
+    background: var(--text);
+    transition:
+      width 0.15s,
+      background-color 0.15s;
+  }
+  .stop:hover::before,
+  .stop:focus-visible::before {
+    width: 1.5rem;
+    background: var(--signal);
+  }
+  .stop__number {
+    padding-top: 0.42rem;
+  }
+  .stop__title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.3;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.2em;
+    transition: text-decoration-color 0.15s;
+  }
+  .stop:hover .stop__title {
+    text-decoration-color: var(--signal);
+  }
+  .stop__summary {
+    grid-column: 2;
+    max-width: 38rem;
+    color: var(--muted);
+    font-size: 0.97rem;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 560px) {
+    .route {
+      --rail: 0.85rem;
+    }
+    .route__stretch {
+      padding-left: calc(var(--rail) * 2 + 0.45rem);
+    }
+    .route__stage :is(h2, h3) {
+      font-size: 1.3rem;
+    }
+    .stop__title {
+      font-size: 1.08rem;
+    }
+    .stop__summary {
+      font-size: 0.92rem;
+    }
+  }
+</style>

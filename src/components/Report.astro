@@ -1,0 +1,216 @@
+---
+// "Report a problem": a form in a dialog, on every page. Anything with the
+// attribute data-report-open opens it. Where the report goes is set in
+// src/data/report.ts.
+import { ownerMail, reportEndpoint } from "../data/report";
+---
+
+{
+  reportEndpoint && (
+    <dialog
+      class="report"
+      data-report
+      data-endpoint={reportEndpoint}
+      data-mail={ownerMail}
+      aria-labelledby="report-title"
+    >
+      <form class="report__form" data-report-form novalidate>
+        <div class="report__head">
+          <h2 id="report-title">Report a problem</h2>
+          <button class="report__close" type="button" data-report-close aria-label="Close">
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+              <path d="M2 2l10 10M12 2 2 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+        <p>
+          A fact that is wrong, a rule that has changed, a link that is
+          dead, something odd on the map. Say what it is and, if you can,
+          where you read otherwise.
+        </p>
+
+        <label for="report-message">What is wrong?</label>
+        <textarea id="report-message" name="message" rows="6" maxlength="4000" required></textarea>
+
+        <label for="report-email">
+          Your email address
+          <span>optional, only if you want an answer</span>
+        </label>
+        <input id="report-email" name="email" type="email" autocomplete="email" />
+
+        <!-- Left empty by people. Programs that fill in every field give themselves away. -->
+        <div class="report__trap" aria-hidden="true">
+          <label>
+            Leave this empty
+            <input name="_gotcha" type="text" tabindex="-1" autocomplete="off" />
+          </label>
+        </div>
+
+        <p class="report__about">
+          Sent with it: the page you are on, <b data-report-page></b>.
+        </p>
+        <p class="report__error" data-report-error role="alert" hidden></p>
+
+        <div class="report__actions">
+          <button class="button" type="submit" data-report-send>Send report</button>
+          <button class="button button--quiet" type="button" data-report-close>
+            Cancel
+          </button>
+        </div>
+      </form>
+
+      <div class="report__done" data-report-done hidden>
+        <h2 tabindex="-1" data-report-done-title>Thank you</h2>
+        <p data-report-done-text></p>
+        <button class="button" type="button" data-report-close>Close</button>
+      </div>
+    </dialog>
+  )
+}
+
+<script>
+  import "../scripts/report";
+</script>
+
+<style>
+  .report {
+    width: min(34rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 2rem - var(--safe-top) - var(--safe-bottom));
+    margin: auto;
+    padding: 1.5rem 1.6rem 1.6rem;
+    overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    box-shadow: 0 24px 60px rgb(0 0 0 / 0.35);
+  }
+  .report::backdrop {
+    background: rgb(6 14 22 / 0.6);
+  }
+  .report__head {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .report h2 {
+    font-size: 1.5rem;
+    letter-spacing: -0.015em;
+  }
+  .report__close {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+    margin: -0.3rem -0.5rem 0 0;
+    border: 0;
+    border-radius: var(--radius);
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .report__close:hover {
+    color: var(--text);
+    background: color-mix(in srgb, var(--text) 10%, transparent);
+  }
+  .report p {
+    margin-top: 0.7rem;
+    line-height: 1.5;
+  }
+  .report label {
+    display: block;
+    margin-top: 1.2rem;
+    font-weight: 700;
+  }
+  .report label span {
+    margin-left: 0.4rem;
+    color: var(--muted);
+    font-size: 0.88rem;
+    font-weight: 400;
+  }
+  .report textarea,
+  .report input {
+    display: block;
+    width: 100%;
+    margin-top: 0.4rem;
+    padding: 0.6rem 0.7rem 0.5rem;
+    border: 1px solid var(--muted);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    line-height: 1.45;
+  }
+  .report textarea {
+    min-height: 7rem;
+    resize: vertical;
+  }
+  .report__trap {
+    position: absolute;
+    left: -200vw;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+  .report .report__about {
+    margin-top: 1rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .report__about b {
+    color: var(--text);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+  .report .report__error {
+    margin-top: 1rem;
+    padding: 0.7rem 0.9rem 0.6rem;
+    border-left: 4px solid var(--signal);
+    background: var(--mark);
+    font-size: 0.95rem;
+  }
+  .report__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1.3rem;
+  }
+  .report__done .button {
+    margin-top: 1.3rem;
+  }
+  .report__done h2:focus {
+    outline: none;
+  }
+
+  @media (max-width: 560px) {
+    .report {
+      width: 100%;
+      max-width: none;
+      max-height: calc(100dvh - var(--safe-top));
+      margin: auto 0 0;
+      padding: 1.15rem 1.1rem calc(1.2rem + var(--safe-bottom) + var(--browser-bottom));
+      border-radius: 14px 14px 0 0;
+      border-width: 1px 0 0;
+    }
+    .report__close {
+      width: 2.5rem;
+      height: 2.5rem;
+      margin: -0.2rem -0.3rem 0 0;
+    }
+    .report textarea,
+    .report input {
+      font-size: 1rem;
+    }
+    .report__actions {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+    .report__actions .button {
+      width: 100%;
+      justify-content: center;
+      min-height: 2.85rem;
+    }
+  }
+</style>

@@ -1,0 +1,122 @@
+---
+// A water-level gauge drawn like the staff gauges on Dutch canals and
+// locks: a white board, black blocks one metre tall, red at the zero (NAP).
+//
+// Scripts move the water by setting --fill (0% to 100% of the board) on the
+// element, and add the class "is-on" while the level is in use.
+interface Props {
+  /** Lowest and highest level on the board, metres to NAP. */
+  min?: number;
+  max?: number;
+  /** Adds a slider over the board, so the level can be dragged. */
+  input?: boolean;
+  class?: string;
+}
+const { min = -7, max = 5, input = false, class: className } = Astro.props;
+
+const span = max - min;
+const marks: number[] = [];
+for (let mark = Math.ceil(min / 2) * 2; mark < max; mark += 2) {
+  if (mark > min) marks.push(mark);
+}
+const at = (level: number) => `${((level - min) / span) * 100}%`;
+---
+
+<div
+  class:list={["gauge", className]}
+  style={`--fill: ${at(0)}; --metre: ${100 / span}%; --zero: ${at(0)}`}
+  data-gauge
+>
+  <div class="gauge__staff" aria-hidden="true">
+    {
+      marks.map((mark) => (
+        <span
+          class:list={["gauge__mark", { "gauge__mark--nap": mark === 0 }]}
+          style={`bottom: ${at(mark)}`}
+        >
+          {mark === 0 ? "NAP" : mark > 0 ? `+${mark}` : `−${-mark}`}
+        </span>
+      ))
+    }
+    <span class="gauge__water"></span>
+  </div>
+  {
+    input && (
+      <input
+        class="gauge__input"
+        type="range"
+        min={min}
+        max={max}
+        step="0.1"
+        value="0"
+        data-level
+        aria-label="Water level in metres relative to NAP"
+      />
+    )
+  }
+</div>
+
+<style>
+  .gauge {
+    position: relative;
+    width: 3.4rem;
+    height: 10.5rem;
+    border-radius: 3px;
+    background: #f4efe4;
+    overflow: hidden;
+  }
+  .gauge:has(.gauge__input:focus-visible) {
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
+  }
+  .gauge__staff {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(#c8372d, #c8372d) 0 calc(100% - var(--zero)) / 100% 2px
+        no-repeat,
+      repeating-linear-gradient(
+          to top,
+          #17212b 0 var(--metre),
+          transparent var(--metre) calc(2 * var(--metre))
+        )
+        0 0 / 0.8rem 100% no-repeat;
+  }
+  .gauge__mark {
+    position: absolute;
+    left: 1.05rem;
+    translate: 0 50%;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    font-weight: 600;
+    line-height: 1;
+    color: #17212b;
+  }
+  .gauge__mark--nap {
+    color: #c8372d;
+    translate: 0 -2px;
+  }
+  .gauge__water {
+    position: absolute;
+    inset: auto 0 0;
+    height: var(--fill);
+    background: rgb(63 147 207 / 0.5);
+    border-top: 2px solid #1f6fae;
+    opacity: 0.35;
+    transition: opacity 0.2s;
+  }
+  .gauge.is-on .gauge__water {
+    opacity: 1;
+  }
+  .gauge__input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: ns-resize;
+    writing-mode: vertical-lr;
+    direction: rtl;
+  }
+</style>

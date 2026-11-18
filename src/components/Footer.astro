@@ -1,0 +1,47 @@
+---
+import Subscribe from "./Subscribe.astro";
+import { footerNav, nav, owner, site } from "../data/site";
+---
+
+<footer class="site-footer">
+  <div class="wrap site-footer__inner">
+    <div>
+      <p><strong>{site.name}</strong></p>
+      <p>
+        General information for people moving to the Netherlands. It is not
+        legal or tax advice. Rules change, so check the official source linked
+        in each guide before you act on it.
+      </p>
+    </div>
+    <div>
+      <p class="mono">Site</p>
+      <ul>
+        {[...nav, ...footerNav].map((item) => <li><a href={item.href}>{item.label}</a></li>)}
+        <li>
+          <button class="text-button" type="button" data-report-open>
+            Report a problem
+          </button>
+        </li>
+      </ul>
+    </div>
+    <div>
+      <p class="mono">Map data</p>
+      <ul>
+        <li>Heights: AHN, via PDOK</li>
+        <li>Population and provinces: CBS</li>
+        <li>Streets: Kadaster TOP10NL, via PDOK</li>
+        <li>Buildings: 3DBAG</li>
+        <li>Globe and neighbours: Natural Earth</li>
+        <li><a href="/about/#data">Sources and licences</a></li>
+      </ul>
+    </div>
+    <div class="site-footer__news">
+      <p class="mono">Newsletter</p>
+      <p>What changed in the rules, and which guides are new.</p>
+      <Subscribe id="footer-news" compact />
+    </div>
+  </div>
+  <p class="wrap site-footer__by">
+    Made by {owner.name} · <a href="/contact/">{owner.email}</a>
+  </p>
+</footer>

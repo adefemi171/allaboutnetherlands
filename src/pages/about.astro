@@ -1,0 +1,391 @@
+---
+import Base from "../layouts/Base.astro";
+import meta from "../data/grid-meta.json";
+import { owner } from "../data/site";
+const stats = meta.stats;
+const number = new Intl.NumberFormat("en-GB");
+const belowNap = Math.round(stats.shareBelowNap * 100);
+const lowest = Math.abs(stats.lowest.metres).toFixed(1);
+const highest = Math.round(stats.highest.metres);
+
+const sources = [
+  {
+    what: "Ground height in the Netherlands",
+    source: "AHN (Actueel Hoogtebestand Nederland), terrain model, served by PDOK",
+    url: "https://www.ahn.nl/",
+    licence: "CC0",
+  },
+  {
+    what: `Residents per 500 m square, ${stats.populationYear}`,
+    source: "CBS, Kaart van 500 meter bij 500 meter met statistieken, served by PDOK",
+    url: "https://www.cbs.nl/nl-nl/dossier/nederland-regionaal/geografische-data/kaart-van-500-meter-bij-500-meter-met-statistieken",
+    licence: "CC BY 4.0",
+  },
+  {
+    what: `Province borders, ${stats.provinceYear}`,
+    source: "CBS and Kadaster, gebiedsindelingen, served by PDOK",
+    url: "https://www.cbs.nl/nl-nl/dossier/nederland-regionaal/geografische-data/cbs-gebiedsindelingen",
+    licence: "CC BY 4.0",
+  },
+  {
+    what: "Streets, water, land use and names at street level",
+    source: "Kadaster, TOP10NL (Basisregistratie Topografie), loaded live from PDOK",
+    url: "https://www.kadaster.nl/zakelijk/producten/geo-informatie/topnl",
+    licence: "CC BY 4.0",
+  },
+  {
+    what: "Buildings at street level: outline, height, year built",
+    source: "3DBAG by the 3D geoinformation group, TU Delft, loaded live from 3dbag.nl",
+    url: "https://3dbag.nl/",
+    licence: "CC BY 4.0",
+  },
+  {
+    what: "Street and address search on the map",
+    source: "PDOK Locatieserver",
+    url: "https://www.pdok.nl/pdok-locatieserver",
+    licence: "Open data, terms at PDOK",
+  },
+  {
+    what: "Aerial photo ground on the map",
+    source: "Beeldmateriaal.nl / PDOK Luchtfoto RGB (Actueel_orthoHR)",
+    url: "https://www.pdok.nl/introductie/-/article/pdok-luchtfoto-rgb-open-",
+    licence: "CC BY 4.0",
+  },
+  {
+    what: "Recent satellite photos on the map and Satellite page",
+    source: "Sentinel-2 and Landsat via Element84 Earth Search (STAC)",
+    url: "https://element84.com/earth-search/",
+    licence: "Copernicus / USGS open data",
+  },
+  {
+    what: "The globe on the Satellite page, and the clouds of the day on it",
+    source: "NASA Blue Marble, Black Marble and VIIRS (NOAA-20) via NASA GIBS",
+    url: "https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api",
+    licence: "Public domain (NASA)",
+  },
+  {
+    what: "Satellite orbits and pass times on the Satellite page",
+    source: "Celestrak GP element sets, propagated with SGP4 (satellite.js)",
+    url: "https://celestrak.org/",
+    licence: "Public orbit data; SGP4 via satellite.js",
+  },
+  {
+    what: "Where the universities and landmarks are",
+    source: "Their addresses, looked up in the PDOK Locatieserver and compared with TOP10NL",
+    url: "https://www.pdok.nl/pdok-locatieserver",
+    licence: "Open data, terms at PDOK",
+  },
+  {
+    what: "Land on the globe, neighbouring countries, large rivers",
+    source: "Natural Earth",
+    url: "https://www.naturalearthdata.com/",
+    licence: "Public domain",
+  },
+  {
+    what: "Ground height in Belgium and Germany",
+    source: "Mapzen terrain tiles on AWS Open Data",
+    url: "https://registry.opendata.aws/terrain-tiles/",
+    licence: "Open data, see the attribution list there",
+  },
+];
+---
+
+<Base
+  title="About"
+  description="What All About Netherlands is, how the guides are written and checked, how to read the 3D map, where its data comes from, and how to report a mistake."
+>
+  <main id="main" class="wrap about">
+    <header>
+      <p class="mono">About</p>
+      <h1>What this site is, and how far to trust it</h1>
+    </header>
+
+    <div class="about__body">
+      <section>
+        <h2>What it is</h2>
+        <p>
+          All About Netherlands explains the paperwork of moving to the
+          Netherlands in plain language: residence permits, finding a home,
+          registering, banking, health insurance, DigiD and the 30% ruling.
+          The <a href="/guides/">guides</a> are in the order you need them.
+        </p>
+        <p>
+          The site is made by {owner.name}. It is independent: it is not
+          connected to the Dutch government or to any of the organisations
+          the guides are about. To get in touch, see
+          the <a href="/contact/">contact page</a>.
+        </p>
+      </section>
+
+      <section id="guides">
+        <h2>How the guides are made</h2>
+        <p>
+          Each fact in the guides was looked up on
+          an official page, such as the IND, the Belastingdienst,
+          Government.nl or a municipality, and each guide ends with the list
+          of pages it is based on.
+        </p>
+        <p>
+          Every guide shows the date its facts were last checked. Where a
+          point was not yet published, or could not be read on an official
+          page, the guide lists it under "Not confirmed yet".
+        </p>
+        <p>
+          This is general information, not legal or tax advice. Amounts and
+          rules change, often on 1 January and 1 July. Before you act on
+          something, open the official page and check that it still says the
+          same thing.
+        </p>
+      </section>
+
+      <section id="report">
+        <h2>If something is wrong</h2>
+        <p>
+          A fact that is wrong, a rule that has changed, a dead link, a
+          street in the wrong place: please say so. There is a "Report a
+          problem" link on every page, and the report says which page you
+          were on.
+        </p>
+        <p>
+          <button class="button" type="button" data-report-open>
+            Report a problem
+          </button>
+        </p>
+        <p>
+          A report holds what you write, the address of the page, and your
+          email address if you choose to give one. On the map it also holds
+          where the map was looking. Sending it opens your mail program,
+          addressed to <a href={`mailto:${owner.email}`}>{owner.email}</a>,
+          with the report filled in.
+        </p>
+      </section>
+
+      <section id="map">
+        <h2>How to read the map</h2>
+        <p>
+          From afar, the <a href="/map/">map</a> is the Netherlands in
+          squares of 500 by 500 metres, the same squares Statistics
+          Netherlands (CBS) uses to publish its figures. Zoom in to within a
+          few kilometres and the squares make way for real streets and
+          buildings.
+        </p>
+        <dl class="legend">
+          <div>
+            <dt>The ground</dt>
+            <dd>
+              Each square sits at the typical height of the ground inside
+              it, measured from NAP, the Dutch zero for height. Heights are
+              stretched a great deal, or the country would look flat as
+              paper. Low land is stretched more than high land, so a polder
+              4 metres down is easy to see and the hills of Limburg do not
+              turn into spikes.
+            </dd>
+          </div>
+          <div>
+            <dt>The colours</dt>
+            <dd>
+              Blue-green land lies below NAP. Green is just above it, then
+              yellow, then brown for the highest ground. Neighbouring
+              countries are grey.
+            </dd>
+          </div>
+          <div>
+            <dt>The blocks</dt>
+            <dd>
+              A square has blocks on it if people live there. The more
+              residents, the taller and the more numerous the blocks. The
+              blocks are not real buildings.
+            </dd>
+          </div>
+          <div>
+            <dt>The streets</dt>
+            <dd>
+              Close to the ground the stretched heights relax to flat, the
+              blocks sink away, and the map draws what is really there:
+              roads, cycle paths in red, water, parks, railways, and every
+              building at its measured height. The colour of a wall shows
+              when the building went up, from dark brick for the oldest to
+              pale for the newest. It is a key, not the colour of the
+              real wall. Roofs are drawn flat, and trees stand only where
+              the national map records them. Search for a street or an
+              address to go straight there.
+            </dd>
+          </div>
+          <div>
+            <dt>The places</dt>
+            <dd>
+              Universities are marked with a purple square and landmarks
+              with an orange diamond. From afar they are dots: point at one
+              to read its name, and select it to go there. At street level
+              the map also names buildings and grounds that have a name in
+              the national map, which is far from all of them. The list of
+              universities and landmarks was put together by hand and is a
+              selection, not a complete register.
+            </dd>
+          </div>
+          <div>
+            <dt>The people and traffic</dt>
+            <dd>
+              The walkers, cyclists, cars and trains on the streets are made
+              up. No data says who or what is where. They follow the roads,
+              cycle paths, footpaths and railways of the national map; there
+              are more of them where more people live and fewer after dark;
+              and from higher up they are drawn larger than life so they can
+              be seen. You can turn them off on the map.
+            </dd>
+          </div>
+          <div>
+            <dt>The light</dt>
+            <dd>
+              The sun stands where it stands in the Netherlands at the time
+              shown, and the globe shows the real line between day and
+              night. On the home page the model is shown in the light of
+              midday when it is dark outside.
+            </dd>
+          </div>
+          <div>
+            <dt>The water</dt>
+            <dd>
+              "Take away the dikes" colours everything below the level you
+              choose. It is a way to see how low the land is, not a flood
+              forecast. Real water has to get there first, and dunes, dikes
+              and higher ground stand in its way.
+            </dd>
+          </div>
+        </dl>
+        <p>
+          In this model {belowNap}% of the land squares lie below NAP. The
+          Netherlands Environmental Assessment Agency
+          (PBL) <a href="https://www.pbl.nl/correctie-formulering-over-overstromingsrisico" rel="noopener">puts it at 26% of the land</a>.
+          The lowest square is NAP −{lowest} m, in {stats.lowest.province}.
+          The model counts {number.format(stats.population)} residents.
+        </p>
+        <p>
+          A square shows one height for 25 hectares, so a dike, a dune ridge
+          or a single hilltop can vanish into its surroundings. The
+          Vaalserberg, the highest point of the mainland, is a little over
+          322 m. Its square on this map stands at {highest} m, because most
+          of the square is not the summit.
+        </p>
+      </section>
+
+      <section id="data">
+        <h2>Where the data comes from</h2>
+        <div class="table">
+          <table>
+            <thead>
+              <tr>
+                <th>What</th>
+                <th>Source</th>
+                <th>Licence</th>
+              </tr>
+            </thead>
+            <tbody>
+              {
+                sources.map((row) => (
+                  <tr>
+                    <td>{row.what}</td>
+                    <td>
+                      <a href={row.url} rel="noopener">
+                        {row.source}
+                      </a>
+                    </td>
+                    <td>{row.licence}</td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Most of this data is built into the site. Street level is not:
+          it would be far too large. When you zoom in, your browser fetches
+          the streets from PDOK, the Dutch government's map service, and
+          the buildings from 3DBAG, for the area you are looking at. A
+          street or address you type into the map's search box goes to
+          PDOK as well. Those services see the request, as any website you
+          visit does. If they are down, the map still works from further
+          out.
+        </p>
+      </section>
+
+    </div>
+  </main>
+</Base>
+
+<style>
+  .about {
+    padding-top: clamp(2.5rem, 6vw, 5rem);
+  }
+  .about h1 {
+    max-width: 16em;
+    margin-top: 0.9rem;
+    font-size: clamp(2.1rem, 4.6vw, 3.4rem);
+    font-weight: 900;
+    letter-spacing: -0.025em;
+    line-height: 1.03;
+  }
+  .about__body {
+    max-width: 46rem;
+  }
+  section {
+    margin-top: 3rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+  }
+  section h2 {
+    font-size: 1.65rem;
+    letter-spacing: -0.015em;
+  }
+  section > * + * {
+    margin-top: 1rem;
+  }
+  section > p {
+    max-width: var(--measure);
+  }
+
+  .legend {
+    margin-bottom: 0;
+    border-top: 4px solid var(--text);
+  }
+  .legend div {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+    gap: 0.2rem 1.2rem;
+    padding: 0.75rem 0 0.65rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .legend dt {
+    font-weight: 700;
+  }
+  .legend dd {
+    margin: 0;
+  }
+
+  .table {
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    min-width: 34rem;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    line-height: 1.45;
+  }
+  th,
+  td {
+    padding: 0.6rem 1rem 0.5rem 0;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    border-bottom: 2px solid var(--text);
+    font-size: 0.85rem;
+  }
+  @media (max-width: 560px) {
+    .legend div {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

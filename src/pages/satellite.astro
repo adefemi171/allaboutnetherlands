@@ -1,0 +1,873 @@
+---
+import SceneDialog from "../components/SceneDialog.astro";
+import Search from "../components/Search.astro";
+import Timelapse from "../components/Timelapse.astro";
+import Base from "../layouts/Base.astro";
+import { places } from "../data/places";
+
+const picks = places.filter((p) =>
+  ["amsterdam", "rotterdam", "den-haag", "utrecht", "schiphol"].includes(p.id),
+);
+const filters = [
+  ["all", "All"],
+  ["photo", "With a photo"],
+  ["imaging", "Cameras"],
+  ["radar", "Radar"],
+  ["weather", "Weather"],
+  ["crew", "Crewed"],
+];
+// The rows of the timeline, as in src/satellite/timeline.ts.
+const rows = [
+  ["watched", "Photo"],
+  ["likely", "Likely"],
+  ["could", "Could"],
+  ["overhead", "Overhead"],
+];
+const tabs = [
+  ["all", "All"],
+  ["detail", "Detailed"],
+  ["weather", "Weather"],
+];
+const legend = [
+  ["imaging", "Camera"],
+  ["radar", "Radar"],
+  ["weather", "Weather"],
+  ["crew", "Crewed"],
+  ["other", "Other"],
+];
+---
+
+<Base
+  title="Satellite"
+  description="Who watched a place in the Netherlands this week: satellite passes from public orbit data, and the pictures Sentinel, Landsat and the weather satellites took of it."
+  scene
+  footer={false}
+  preload={[
+    { href: "/data/earth-day-small.jpg", as: "image", media: "(max-width: 720px)" },
+    { href: "/data/earth-day.jpg", as: "image", media: "(min-width: 721px)" },
+    { href: "/data/earth-night.jpg", as: "image" },
+  ]}
+>
+  <main id="main" class="sat">
+    <div class="sat__stage">
+    <div class="sat__globe">
+      <canvas
+        data-sat-canvas
+        tabindex="0"
+        role="application"
+        aria-label="The Earth with the satellites around it. Arrow keys turn it, plus and minus zoom. Press a spot to see who watched it."
+      ></canvas>
+
+      <p class="sat__clock mono" data-sat-clock></p>
+
+      <article class="sat__pass sat__card" data-sat-pass hidden>
+        <p class="mono" data-sat-pass-label></p>
+        <h2 data-sat-pass-name></h2>
+        <dl>
+          <div><dt class="mono">Closest</dt><dd data-sat-pass-when></dd></div>
+          <div><dt class="mono">Height</dt><dd data-sat-pass-height></dd></div>
+          <div><dt class="mono">Passed</dt><dd data-sat-pass-near></dd></div>
+        </dl>
+        <p class="sat__actions">
+          <button type="button" class="is-main" data-sat-pass-photo>See the photo</button>
+          <button type="button" data-sat-pass-replay>Replay</button>
+          <button type="button" data-sat-pass-now>Back to now</button>
+        </p>
+      </article>
+
+      <div class="sat__tools">
+        <ul class="sat__legend" aria-label="What the dots are">
+          {legend.map(([kind, label]) => <li class={`sat__dot sat__dot--${kind}`}>{label}</li>)}
+        </ul>
+        <label class="sat__day">
+          <input type="checkbox" data-sat-day checked />
+          <span>Clouds of the day</span>
+        </label>
+        <div class="sat__zoom" role="group" aria-label="Zoom">
+          <button type="button" data-sat-zoom="in" aria-label="Zoom in">
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
+          </button>
+          <button type="button" data-sat-zoom="out" aria-label="Zoom out">
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
+          </button>
+        </div>
+      </div>
+
+      <p class="sat__tip mono" data-sat-tip hidden></p>
+    </div>
+
+    <section class="sat__timeline" data-sat-block="timeline" aria-label="The week on a timeline" hidden>
+      <ul class="sat__rows mono">
+        {
+          rows.map(([label, name]) => (
+            <li class={`sat__row sat__row--${label}`}>
+              {name} <span data-sat-count={label}></span>
+            </li>
+          ))
+        }
+      </ul>
+      <!-- The same passes are in the lists, for those who cannot use this. -->
+      <canvas data-sat-timeline-canvas aria-hidden="true"></canvas>
+    </section>
+    </div>
+
+    <div class="sat__panel">
+      <header class="sat__intro">
+        <p class="mono">Satellite</p>
+        <h1>Who watched here this week</h1>
+        <p class="sat__lede">
+          Pick a place, look up a street, or press a spot on the globe. We
+          replay public orbits over the last seven days, list every pass that
+          could see it, and show the pictures that were made public.
+        </p>
+      </header>
+
+      <div class="sat__search">
+        <Search id="sat-search" placeholder="Find a city, a street, an address" addresses />
+        <ul class="sat__picks">
+          {
+            picks.map((place) => (
+              <li>
+                <button type="button" data-sat-pick={place.id}>
+                  {place.english ?? place.name}
+                </button>
+              </li>
+            ))
+          }
+          <li><button type="button" data-sat-locate hidden>Where I am</button></li>
+        </ul>
+      </div>
+
+      <section class="sat__report sat__card" data-sat-report hidden>
+        <p class="mono" data-sat-where></p>
+        <p class="mono" data-sat-status role="status">Looking up orbits…</p>
+        <progress class="sat__progress" data-sat-progress max="1" value="0"></progress>
+        <h2 data-sat-headline></h2>
+        <p class="sat__summary" data-sat-summary></p>
+
+        <div class="sat__gallery" data-sat-gallery hidden>
+          <div class="sat__gallery-bar">
+            <div class="sat__tabs" role="group" aria-label="Which pictures to show">
+              {
+                tabs.map(([tab, label]) => (
+                  <button type="button" data-gallery-tab={tab} aria-pressed="false">
+                    {label}
+                  </button>
+                ))
+              }
+            </div>
+            <p class="mono" data-gallery-count></p>
+            <button type="button" data-gallery-step="-1" aria-label="Previous picture">
+              <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </button>
+            <button type="button" data-gallery-step="1" aria-label="Next picture">
+              <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </button>
+          </div>
+          <button type="button" class="sat__picture" data-gallery-open aria-label="Show this picture large">
+            <span class="sat__square">
+              <canvas data-gallery-canvas hidden></canvas>
+              <img data-gallery-img alt="" referrerpolicy="no-referrer" decoding="async" hidden />
+              <span class="sat__pin" data-gallery-pin hidden></span>
+            </span>
+            <span class="sat__tag mono" data-gallery-tag></span>
+          </button>
+          <div class="sat__caption">
+            <p>
+              <strong data-gallery-name></strong>
+              <span data-gallery-what></span>
+            </p>
+            <button type="button" data-gallery-replay>Replay</button>
+          </div>
+        </div>
+
+        <div class="sat__block" data-sat-block="lapse" hidden>
+          <button type="button" class="sat__lapse" data-sat-lapse>
+            <strong class="mono">Time-lapse</strong>
+            <span>This place, year by year</span>
+          </button>
+        </div>
+
+        <div class="sat__block" data-sat-block="always" hidden>
+          <h3 class="mono">Always watching</h3>
+          <p class="sat__note" data-sat-always></p>
+        </div>
+
+        <div class="sat__block" data-sat-block="passes" hidden>
+          <div class="sat__filters" role="group" aria-label="Which passes to list">
+            {
+              filters.map(([kind, label]) => (
+                <button type="button" data-sat-filter={kind} aria-pressed="false">
+                  {label} <span></span>
+                </button>
+              ))
+            }
+          </div>
+          <h3 class="mono">Upcoming</h3>
+          <ul class="sat__list" data-sat-upcoming></ul>
+          <p class="sat__note" data-sat-upcoming-note hidden></p>
+          <h3 class="mono">This week</h3>
+          <ul class="sat__list" data-sat-past></ul>
+          <p class="sat__note" data-sat-past-note hidden></p>
+        </div>
+
+        <p class="sat__credit">
+          Times are Dutch time. Orbits Celestrak · SGP4 via satellite.js ·
+          Photos Sentinel / Landsat via Element84 Earth Search · Globe, clouds
+          and daily pictures NASA Blue Marble, Black Marble, VIIRS and MODIS
+          via GIBS ·
+          <a href="/about/#data">Sources</a>
+          · Also on the <a href="/map/" data-sat-map-link>map</a>
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <SceneDialog />
+  <Timelapse />
+</Base>
+
+<style is:global>
+  /* Global, because the page script fills in the lists. Every rule is under .sat. */
+  .sat {
+    position: relative;
+    /* The header lies over the top of the page: the globe runs under it. */
+    min-height: 100dvh;
+    display: grid;
+    grid-template-columns: minmax(18rem, 24rem) 1fr;
+    gap: 0;
+    background: var(--ink-900);
+    color: var(--text);
+  }
+
+  .sat__stage {
+    order: 2;
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    min-width: 0;
+  }
+  .sat__globe {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    background: radial-gradient(ellipse at 40% 35%, #152838 0%, var(--ink-900) 70%);
+  }
+  .sat__globe canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    cursor: grab;
+  }
+  .sat__globe canvas:active {
+    cursor: grabbing;
+  }
+
+  .sat__panel {
+    order: 1;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-height: 100dvh;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: calc(var(--header-offset) + 1.1rem) 1.15rem calc(1.25rem + var(--safe-bottom));
+    border-right: 1px solid var(--line);
+    background: color-mix(in srgb, var(--ink-800) 92%, transparent);
+    backdrop-filter: blur(14px);
+  }
+
+  .sat__intro h1 {
+    margin-top: 0.35rem;
+    font-size: clamp(1.55rem, 2.4vw, 2rem);
+    line-height: 1.15;
+  }
+  .sat__lede {
+    margin-top: 0.65rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  .sat__search .search {
+    width: 100%;
+  }
+  .sat__search .search__field {
+    height: 2.7rem;
+    background-color: color-mix(in srgb, var(--ink-900) 70%, transparent);
+  }
+
+  .sat__picks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0.7rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .sat__picks button {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 0.35em 0.7em 0.3em;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .sat__picks button:hover {
+    border-color: var(--signal);
+    color: var(--signal);
+  }
+
+  .sat__card {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 1rem 1.05rem 1.05rem;
+    background: color-mix(in srgb, var(--ink-900) 55%, transparent);
+  }
+  .sat__report h2 {
+    margin-top: 0.5rem;
+    font-size: 1.3rem;
+    line-height: 1.25;
+  }
+  .sat__report h2:empty,
+  .sat__summary:empty {
+    display: none;
+  }
+
+  /* The pictures, one at a time. */
+  .sat__gallery {
+    margin-top: 1rem;
+  }
+  .sat__gallery[hidden] {
+    display: none;
+  }
+  .sat__gallery-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+  }
+  .sat__gallery-bar p {
+    margin: 0 0.2rem 0 auto;
+    color: var(--muted);
+  }
+  .sat__tabs {
+    display: flex;
+    gap: 1px;
+  }
+  .sat__gallery-bar button,
+  .sat__caption button {
+    display: grid;
+    place-items: center;
+    min-width: 2rem;
+    min-height: 2rem;
+    border: 0;
+    border-radius: var(--radius);
+    padding: 0.3em 0.6em 0.25em;
+    background: color-mix(in srgb, var(--text) 10%, transparent);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .sat__tabs button[hidden] {
+    display: none;
+  }
+  .sat__tabs button[aria-pressed="true"] {
+    background: var(--signal);
+    color: var(--signal-ink);
+  }
+  .sat__picture {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: #0a0c0f;
+    color: var(--muted);
+    cursor: zoom-in;
+  }
+  /* The pictures are square. The middle of one shows, where the place is. */
+  .sat__square {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 100%;
+    aspect-ratio: 1;
+    translate: 0 -50%;
+  }
+  .sat__square canvas,
+  .sat__square img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .sat__square [hidden] {
+    display: none;
+  }
+  .sat__pin {
+    position: absolute;
+    width: 1.3rem;
+    height: 1.3rem;
+    translate: -50% -50%;
+    border: 2px solid var(--signal);
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.6);
+  }
+  .sat__tag {
+    position: absolute;
+    left: 0.5rem;
+    top: 0.5rem;
+    padding: 0.2rem 0.45rem 0.1rem;
+    border-radius: 3px;
+    background: rgb(8 12 16 / 0.8);
+    color: #e9e5db;
+  }
+  .sat__caption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 0.55rem;
+  }
+  .sat__caption p {
+    display: grid;
+    gap: 0.1rem;
+    margin: 0;
+    min-width: 0;
+    font-size: 0.86rem;
+  }
+  .sat__caption span {
+    color: var(--muted);
+  }
+  .sat__lapse {
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 0.6rem 0.75rem 0.5rem;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 0.9rem;
+    text-align: left;
+    cursor: pointer;
+  }
+  .sat__lapse:hover {
+    border-color: var(--signal);
+  }
+  .sat__lapse span {
+    color: var(--muted);
+  }
+
+  /* The week on a strip under the globe. */
+  .sat__timeline {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.9rem;
+    padding: 0.6rem 1.1rem calc(0.45rem + var(--safe-bottom));
+    border-top: 1px solid var(--line);
+    background: var(--ink-800);
+  }
+  .sat__timeline[hidden] {
+    display: none;
+  }
+  .sat__timeline canvas {
+    display: block;
+    width: 100%;
+    height: 5.5rem;
+    min-width: 0;
+    touch-action: pan-y;
+  }
+  /* Four rows over the names of the days, as the canvas draws them. */
+  .sat__rows {
+    display: grid;
+    grid-template-rows: repeat(4, 1fr);
+    align-items: center;
+    height: calc(5.5rem - 16px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .sat__row span {
+    margin-left: 0.4rem;
+    color: var(--text);
+  }
+  .sat__row--watched {
+    color: var(--signal);
+  }
+  .sat__summary {
+    margin-top: 0.55rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .sat__block {
+    margin-top: 1.1rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+  }
+  .sat__block h3 {
+    margin: 0 0 0.55rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .sat__list {
+    display: grid;
+    gap: 0.45rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .sat__note {
+    margin: 0.4rem 0 0;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    color: var(--muted);
+  }
+  .sat__note[hidden] {
+    display: none;
+  }
+  .sat__block h3:not(:first-child) {
+    margin-top: 1.1rem;
+  }
+
+  .sat__progress {
+    display: block;
+    width: 100%;
+    height: 0.3rem;
+    margin-top: 0.5rem;
+    accent-color: var(--signal);
+  }
+  .sat__progress[hidden] {
+    display: none;
+  }
+
+  .sat__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+  }
+  .sat__filters button {
+    border: 1px solid var(--line);
+    border-radius: 99px;
+    padding: 0.3em 0.75em 0.25em;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .sat__filters button[hidden] {
+    display: none;
+  }
+  .sat__filters button[aria-pressed="true"] {
+    border-color: var(--signal);
+    background: var(--signal);
+    color: var(--signal-ink);
+  }
+  .sat__filters span {
+    opacity: 0.7;
+    font-weight: 400;
+  }
+
+  /* On the globe: the clock, the pass that is showing, and the controls. */
+  .sat__clock {
+    position: absolute;
+    left: 1.1rem;
+    top: calc(var(--header-offset) + 0.6rem);
+    margin: 0;
+    padding: 0.3rem 0.6rem 0.2rem;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--ink-800) 85%, transparent);
+    pointer-events: none;
+  }
+  .sat__clock:empty {
+    display: none;
+  }
+  .sat__pass {
+    position: absolute;
+    left: 1.1rem;
+    bottom: 1.1rem;
+    width: min(21rem, calc(100% - 2.2rem));
+    background: color-mix(in srgb, var(--ink-800) 90%, transparent);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 16px 40px rgb(0 0 0 / 0.3);
+  }
+  .sat__pass h2 {
+    margin-top: 0.3rem;
+    font-size: 1.25rem;
+  }
+  .sat__pass dl {
+    display: grid;
+    gap: 0.45rem;
+    margin: 0.8rem 0 0;
+  }
+  .sat__pass dd {
+    margin: 0.1rem 0 0;
+    font-size: 0.93rem;
+    font-weight: 600;
+  }
+  .sat__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.9rem;
+  }
+  .sat__actions button,
+  .sat__zoom button {
+    border: 0;
+    border-radius: var(--radius);
+    padding: 0.45em 0.8em 0.35em;
+    background: color-mix(in srgb, var(--text) 12%, transparent);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .sat__actions button[hidden] {
+    display: none;
+  }
+  .sat__actions .is-main {
+    background: var(--signal);
+    color: var(--signal-ink);
+  }
+  .sat__tools {
+    position: absolute;
+    right: 1.1rem;
+    bottom: 1.1rem;
+    display: grid;
+    justify-items: end;
+    gap: 0.6rem;
+    font-size: 0.82rem;
+    pointer-events: none;
+  }
+  .sat__tools > * {
+    pointer-events: auto;
+  }
+  .sat__legend {
+    display: grid;
+    gap: 0.2rem;
+    margin: 0;
+    padding: 0.5rem 0.65rem 0.4rem;
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--ink-800) 85%, transparent);
+    list-style: none;
+    color: var(--muted);
+  }
+  .sat__dot::before {
+    content: "";
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-right: 0.45rem;
+    border-radius: 50%;
+    background: #8fa3b5;
+  }
+  /* The colours of the dots in src/satellite/globe.ts. */
+  .sat__dot--imaging::before {
+    background: #ff7f1a;
+  }
+  .sat__dot--radar::before {
+    background: #e86bb0;
+  }
+  .sat__dot--weather::before {
+    background: #62b4e8;
+  }
+  .sat__dot--crew::before {
+    background: #fff;
+  }
+  .sat__day {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.65rem 0.3rem;
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--ink-800) 85%, transparent);
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .sat__day input {
+    margin: 0;
+    accent-color: var(--signal);
+  }
+  .sat__zoom {
+    display: grid;
+    gap: 1px;
+  }
+  .sat__zoom button {
+    display: grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0;
+    background: color-mix(in srgb, var(--ink-800) 90%, transparent);
+  }
+  .sat__tip {
+    position: fixed;
+    z-index: 6;
+    margin: 0;
+    padding: 0.25rem 0.5rem 0.15rem;
+    translate: -50% calc(-100% - 0.7rem);
+    border-radius: 3px;
+    background: var(--ink-700);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .sat__item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.65rem;
+    align-items: center;
+    width: 100%;
+    padding: 0.45rem 0.5rem;
+    border: 0;
+    border-radius: var(--radius);
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+  }
+  .sat__item:hover,
+  .sat__item:focus-visible {
+    background: color-mix(in srgb, var(--text) 8%, transparent);
+  }
+  .sat__item.is-active {
+    background: color-mix(in srgb, var(--signal) 16%, transparent);
+  }
+  .sat__badge {
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 3px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    background: color-mix(in srgb, var(--text) 12%, transparent);
+  }
+  .sat__badge--watched {
+    background: var(--signal);
+    color: var(--signal-ink);
+  }
+  .sat__badge--likely {
+    color: var(--signal);
+    box-shadow: inset 0 0 0 1.5px var(--signal);
+  }
+  .sat__meta {
+    display: grid;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+  .sat__meta strong {
+    font-size: 0.92rem;
+  }
+  .sat__meta span {
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  .sat__credit {
+    margin-top: 1.1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--muted);
+  }
+  .sat__credit a {
+    color: var(--link);
+  }
+
+  @media (max-width: 900px) {
+    /*
+     * Let the page itself scroll. A min-height + 1fr grid row on Safari
+     * locks the panel into a short clip and the pass list cannot move.
+     */
+    .sat {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      height: auto;
+    }
+    .sat__stage {
+      order: 1;
+      height: auto;
+    }
+    .sat__globe {
+      flex: none;
+      height: min(50dvh, 28rem);
+    }
+    .sat__timeline {
+      grid-template-columns: 1fr;
+      gap: 0.3rem;
+      padding: 0.5rem 0.6rem 0.4rem;
+    }
+    .sat__timeline canvas {
+      height: 4.25rem;
+    }
+    .sat__rows {
+      display: flex;
+      gap: 0.9rem;
+      height: auto;
+    }
+    /* Less to scroll past on the way to the pictures. */
+    .sat__legend,
+    .sat__lede {
+      display: none;
+    }
+    .sat__pass {
+      left: 0.6rem;
+      bottom: 0.6rem;
+      width: calc(100% - 4.4rem);
+      padding: 0.7rem 0.8rem;
+    }
+    .sat__pass dl {
+      display: none;
+    }
+    .sat__tools {
+      right: 0.6rem;
+      bottom: 0.6rem;
+    }
+    .sat__day span {
+      display: none;
+    }
+    .sat__panel {
+      order: 2;
+      flex: none;
+      max-height: none;
+      padding-top: 1.1rem;
+      overflow: visible;
+      overscroll-behavior: auto;
+      border-right: 0;
+      border-top: 1px solid var(--line);
+      padding-bottom: calc(1.25rem + var(--safe-bottom) + var(--browser-bottom, 0px));
+    }
+  }
+</style>
+
+<script>
+  import "../scripts/satellite";
+</script>

@@ -1,0 +1,1092 @@
+/* All About Netherlands
+ *
+ * Two looks share one set of tokens. Pages with the map ("scene") are
+ * always dark: the model sits on a night sea. Reading pages follow the
+ * visitor's light or dark preference.
+ */
+
+:root {
+  --font-sans: "Overpass Variable", "Overpass", system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-mono: "Overpass Mono Variable", "Overpass Mono", ui-monospace,
+    "SF Mono", Menlo, monospace;
+
+  /* Palette */
+  --ink-900: #0b1620; /* the sea at night; matches the map background */
+  --ink-800: #101f2c;
+  --ink-700: #182b3b;
+  --ink-600: #24405a;
+  --paper-50: #f6f2e8;
+  --paper-100: #ece6d8;
+  --paper-200: #d9d0bd;
+  --signal: #ff7f1a; /* Dutch orange: the one accent */
+  --signal-strong: #ff9a47;
+  --signal-ink: #0f2540;
+  --water: #62b4e8;
+  --polder: #5faa7d;
+  --brick: #c2583d;
+  --campus: #b99cff; /* universities on the map */
+
+  /* Meaning, light reading theme */
+  --bg: var(--paper-50);
+  --surface: #fffdf6;
+  --text: #14212d;
+  --muted: #566372;
+  --line: var(--paper-200);
+  --link: #0a4f93;
+  --mark: #ffe2c7;
+  --route: var(--signal-ink); /* the line the guides hang on */
+
+  --radius: 4px;
+  --page: min(100% - 2 * clamp(1rem, 4vw, 3rem), 72rem);
+  --measure: 40rem;
+  --header: 4rem;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  /* Sticky/fixed header height including the notch. */
+  --header-offset: calc(var(--header) + var(--safe-top));
+  /*
+   * iOS Safari's toolbar sits on top of the page and is not always in
+   * safe-area-inset-bottom. Leave room so bottom controls stay tappable.
+   */
+  --browser-bottom: 0px;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: var(--ink-900);
+    --surface: var(--ink-800);
+    --text: #e9e5db;
+    --muted: #93a3b2;
+    --line: #213649;
+    --link: var(--water);
+    --mark: #3f2611;
+    --route: var(--signal);
+    color-scheme: dark;
+  }
+}
+
+.theme-scene {
+  --bg: var(--ink-900);
+  --surface: var(--ink-800);
+  --text: #e9e5db;
+  --muted: #93a3b2;
+  --line: #213649;
+  --link: var(--water);
+  --mark: #3f2611;
+  --route: var(--signal);
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------------ base */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--header-offset) + 1rem);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@media (max-width: 560px) {
+  body {
+    font-size: 1rem;
+  }
+}
+
+/* Phones: clear the overlapping browser chrome at the bottom (esp. Safari). */
+@media (max-width: 720px) {
+  :root {
+    --browser-bottom: 3.5rem;
+  }
+}
+/* iOS Safari: the toolbar is taller; keep a bit more clearance. */
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 720px) {
+    :root {
+      --browser-bottom: 4.25rem;
+    }
+  }
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+a {
+  color: var(--link);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+::selection {
+  background: var(--signal);
+  color: var(--signal-ink);
+}
+
+/* Any rule that sets display would otherwise bring hidden elements back. */
+[hidden] {
+  display: none !important;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 100;
+  padding: 0.5rem 0.9rem;
+  background: var(--signal);
+  color: var(--signal-ink);
+  font-weight: 700;
+  border-radius: var(--radius);
+}
+.skip-link:focus {
+  top: 0.75rem;
+}
+
+/* Small capitals in the monospace face: coordinates, measurements, labels. */
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.wrap {
+  width: var(--page);
+  margin-inline: auto;
+}
+
+/* --------------------------------------------------------------- buttons */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+  min-height: 2.6rem;
+  padding: 0.72em 1.15em 0.62em;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--signal);
+  color: var(--signal-ink);
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+}
+.button:hover {
+  background: var(--signal-strong);
+}
+.button--quiet {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--text) 35%, transparent);
+  color: var(--text);
+}
+.button--quiet:hover {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  border-color: color-mix(in srgb, var(--text) 60%, transparent);
+}
+/* A button that does something on the page but reads as a link. */
+.text-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+.text-button:hover {
+  text-decoration-thickness: 2px;
+}
+
+.button svg {
+  flex: none;
+}
+
+/* ---------------------------------------------------------------- header */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: calc(var(--header) + var(--safe-top));
+  padding-top: var(--safe-top);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(8px);
+}
+.theme-scene .site-header {
+  position: fixed;
+  inset: 0 0 auto;
+  background: linear-gradient(
+    color-mix(in srgb, var(--ink-900) 88%, transparent),
+    transparent
+  );
+  border-bottom: 0;
+  backdrop-filter: none;
+}
+/* Set by the home page once ordinary content scrolls under the header. */
+.theme-scene .site-header.is-solid {
+  background: color-mix(in srgb, var(--ink-900) 92%, transparent);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(8px);
+}
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  height: var(--header);
+  width: min(100% - 2 * clamp(1rem, 3vw, 2.5rem), 96rem);
+  margin-inline: auto;
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  color: var(--text);
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.wordmark svg {
+  flex: none;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.9rem, 2vw, 1.75rem);
+  margin-left: auto;
+}
+.site-nav a {
+  padding: 0.55rem 0.15rem;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.97rem;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+.site-nav a:hover {
+  border-bottom-color: color-mix(in srgb, var(--text) 40%, transparent);
+}
+.site-nav a[aria-current="page"] {
+  border-bottom-color: var(--signal);
+}
+
+.site-header__search {
+  width: 15rem;
+}
+.site-header__menu {
+  display: none;
+  place-items: center;
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-left: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.site-header__menu:hover {
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+.site-header__menu-close {
+  display: none;
+}
+.site-header.is-menu .site-header__menu-open {
+  display: none;
+}
+.site-header.is-menu .site-header__menu-close {
+  display: block;
+}
+.site-menu {
+  display: none;
+}
+
+/* ---------------------------------------------------------------- search */
+
+.search {
+  position: relative;
+  width: 100%;
+}
+.search__field {
+  width: 100%;
+  height: 2.4rem;
+  padding: 0.15rem 2.1rem 0 2.2rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 80%, transparent)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%238a98a6' stroke-width='1.8'%3E%3Ccircle cx='7' cy='7' r='4.6'/%3E%3Cpath d='m10.6 10.6 3.4 3.4' stroke-linecap='round'/%3E%3C/svg%3E")
+    no-repeat 0.7rem 50%;
+  font-size: 0.95rem;
+}
+.search__field::placeholder {
+  color: var(--muted);
+}
+.search__field:focus {
+  outline: 2px solid var(--signal);
+  outline-offset: 0;
+  border-color: transparent;
+}
+.search__key {
+  position: absolute;
+  right: 0.55rem;
+  top: 50%;
+  translate: 0 -50%;
+  padding: 0.05rem 0.4rem 0;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--muted);
+  pointer-events: none;
+}
+.search__field:focus + .search__key {
+  display: none;
+}
+.search__results {
+  position: absolute;
+  inset: calc(100% + 0.4rem) 0 auto;
+  z-index: 50;
+  min-width: 19rem;
+  max-height: min(22rem, 70dvh);
+  overflow: auto;
+  overscroll-behavior: contain;
+  margin: 0;
+  padding: 0.3rem;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.28);
+}
+.search__results[hidden] {
+  display: none;
+}
+.search__results a {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0 0.75rem;
+  align-items: baseline;
+  padding: 0.65rem 0.7rem;
+  border-radius: 3px;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+.search__results a small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.82rem;
+}
+.search__results a .mono {
+  font-size: 0.62rem;
+}
+.search__results [aria-selected="true"] a,
+.search__results a:hover {
+  background: color-mix(in srgb, var(--text) 9%, transparent);
+}
+.search__empty {
+  padding: 0.6rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.search__note {
+  margin-top: 0.3rem;
+  padding: 0.45rem 0.6rem 0.25rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+body.has-menu {
+  overflow: hidden;
+}
+
+/* Compact header: hamburger + drawer. Match Zimbabwe's mobile nav. */
+@media (max-width: 960px) {
+  .site-header__inner {
+    gap: 0.75rem;
+    width: min(100% - 1.5rem, 96rem);
+  }
+  .site-nav,
+  .site-header__search {
+    display: none;
+  }
+  .site-header__menu {
+    display: grid;
+  }
+  .site-header.is-menu {
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+  }
+  .theme-scene .site-header.is-menu {
+    background: var(--ink-900);
+  }
+  .site-menu {
+    position: fixed;
+    inset: var(--header-offset) 0 0;
+    z-index: 55;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    padding-bottom: calc(var(--safe-bottom) + var(--browser-bottom));
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+  .theme-scene .site-menu {
+    background: var(--ink-900);
+  }
+  .site-menu[hidden] {
+    display: none;
+  }
+  .site-menu__search {
+    padding: 0.85rem 1rem 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .site-menu__search .search__field {
+    height: 3rem;
+    font-size: 1rem;
+    background-color: var(--surface);
+  }
+  .site-menu__search .search__key {
+    display: none;
+  }
+  .site-menu__search .search__results {
+    position: static;
+    min-width: 0;
+    width: 100%;
+    margin-top: 0.55rem;
+    max-height: min(40dvh, 16rem);
+    box-shadow: none;
+  }
+  .site-menu__nav {
+    display: grid;
+    padding: 0.4rem 0.5rem 1.5rem;
+  }
+  .site-menu__nav a {
+    padding: 0.95rem 0.85rem;
+    color: var(--text);
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-decoration: none;
+    border-radius: var(--radius);
+  }
+  .site-menu__nav a:hover,
+  .site-menu__nav a:focus-visible {
+    background: color-mix(in srgb, var(--text) 8%, transparent);
+  }
+  .site-menu__nav a[aria-current="page"] {
+    color: var(--signal-ink);
+    background: var(--signal);
+  }
+  .theme-scene .site-menu__nav a[aria-current="page"] {
+    color: var(--signal-ink);
+  }
+}
+@media (max-width: 460px) {
+  .wordmark__lead {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------- footer */
+
+.site-footer {
+  position: relative;
+  z-index: 2;
+  margin-top: 5rem;
+  padding: 2.5rem 0 calc(3rem + var(--safe-bottom));
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+.site-footer__inner {
+  display: grid;
+  grid-template-columns: 1.3fr 0.7fr 1fr 1.3fr;
+  gap: 2rem;
+}
+.site-footer__news .subscribe {
+  margin-top: 0.7rem;
+}
+.site-footer__by {
+  margin-top: 2.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.78rem;
+}
+.site-footer p + p {
+  margin-top: 0.7rem;
+}
+.site-footer ul {
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.site-footer li + li {
+  margin-top: 0.3rem;
+}
+.site-footer a {
+  color: var(--text);
+}
+.site-footer .text-button {
+  min-height: 2.5rem;
+  padding: 0.4rem 0;
+}
+@media (max-width: 980px) {
+  .site-footer__inner {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 560px) {
+  .site-footer {
+    margin-top: 3.5rem;
+    padding-top: 2rem;
+  }
+  .site-footer__inner {
+    grid-template-columns: 1fr;
+    gap: 1.6rem;
+  }
+  .site-footer__by {
+    margin-top: 1.6rem;
+  }
+}
+
+/* ----------------------------------------------------------- plain pages */
+/* Newsletter and contact: a heading, a lede, and sections under rules. */
+
+.page {
+  padding-top: clamp(2rem, 6vw, 5rem);
+  padding-bottom: calc(2rem + var(--safe-bottom));
+}
+.page h1 {
+  max-width: 16em;
+  margin-top: 0.9rem;
+  font-size: clamp(1.85rem, 7.2vw, 3.4rem);
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 1.03;
+}
+.page__lede {
+  max-width: var(--measure);
+  margin-top: 1.2rem;
+  font-size: clamp(1.02rem, 2.8vw, 1.15rem);
+  color: var(--muted);
+}
+.page__body {
+  max-width: 46rem;
+}
+.page__body > section {
+  margin-top: 2.6rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--line);
+}
+.page__body > section > h2 {
+  font-size: 1.65rem;
+  letter-spacing: -0.015em;
+}
+.page__body > section > * + * {
+  margin-top: 1rem;
+}
+.page__body > section > p,
+.page__body > section > ul {
+  max-width: var(--measure);
+}
+
+/* ------------------------------------------------------------- the stage */
+/* The canvas, the names laid over it, and the readouts in its corners. */
+
+.stage {
+  position: relative;
+  overflow: hidden;
+  background: var(--ink-900);
+}
+.stage__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  outline-offset: -3px;
+}
+.stage__labels {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.stage__notice {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 0.6rem;
+  padding: 2rem;
+  text-align: center;
+  color: var(--muted);
+  transition: opacity 0.6s;
+}
+.stage__notice[hidden] {
+  display: none;
+}
+.stage.is-ready .stage__notice {
+  opacity: 0;
+  pointer-events: none;
+}
+.stage__canvas,
+.stage__labels {
+  opacity: 0;
+  transition: opacity 0.9s;
+}
+.stage.is-ready .stage__canvas,
+.stage.is-ready .stage__labels {
+  opacity: 1;
+}
+
+.map-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: 0;
+  padding: 0.1rem 0.3rem;
+  border: 0;
+  background: none;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+  text-shadow:
+    0 1px 2px rgb(6 14 22 / 0.95),
+    0 0 8px rgb(6 14 22 / 0.8);
+  pointer-events: auto;
+  transition: opacity 0.2s;
+  will-change: transform;
+}
+button.map-label {
+  cursor: pointer;
+}
+button.map-label:hover {
+  color: var(--signal);
+}
+/* Hidden names also leave the accessibility tree, once they have faded. */
+.map-label.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.2s,
+    visibility 0s 0.2s;
+}
+
+.map-label--city,
+.map-label--landmark {
+  translate: -50% calc(-100% - 8px);
+}
+.map-label--city::after,
+.map-label--landmark::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 4px);
+  width: 6px;
+  height: 6px;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgb(6 14 22 / 0.7);
+}
+.map-label--landmark {
+  font-weight: 500;
+  font-style: italic;
+  font-size: 0.76rem;
+  color: #e8e2d3;
+}
+
+/* Universities: a name over a square, in their own colour. */
+.map-label--university {
+  translate: -50% calc(-100% - 8px);
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #e6dcff;
+}
+.map-label--university::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 4px);
+  width: 6px;
+  height: 6px;
+  translate: -50% 0;
+  background: var(--campus);
+  box-shadow: 0 0 0 2px rgb(6 14 22 / 0.7);
+}
+
+/* A place with no room for its name is a dot. Pointing at it gives the name. */
+.map-label {
+  z-index: 1;
+}
+.map-label.is-dot {
+  z-index: 0;
+  padding: 0;
+}
+.map-label.is-dot::before {
+  content: "";
+  position: absolute;
+  left: -11px;
+  top: -3px;
+  width: 22px;
+  height: 22px;
+}
+.map-label.is-dot .map-label__name {
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  translate: -50% 0;
+  padding: 0.2rem 0.45rem 0.12rem;
+  border-radius: 3px;
+  background: rgb(6 14 22 / 0.88);
+  color: #fff;
+  font-style: normal;
+  white-space: nowrap;
+  text-shadow: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.map-label.is-dot:hover,
+.map-label.is-dot:focus,
+.map-label.is-dot:focus-visible {
+  z-index: 3;
+}
+.map-label.is-dot:hover .map-label__name,
+.map-label.is-dot:focus .map-label__name,
+.map-label.is-dot:focus-visible .map-label__name {
+  opacity: 1;
+  visibility: visible;
+}
+button.map-label.is-dot:hover::after {
+  scale: 1.5;
+}
+.map-label--landmark::after {
+  border-radius: 0;
+  rotate: 45deg;
+  width: 5px;
+  height: 5px;
+  background: var(--signal);
+}
+.map-label--province {
+  translate: -50% -50%;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.72);
+}
+.map-label--water {
+  translate: -50% -50%;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  color: #9fd0f0;
+}
+
+/* Street level. Street names are written along their street. */
+.map-label--street,
+.map-label--canal,
+.map-label--hood,
+.map-label--building {
+  translate: -50% -50%;
+  padding: 0 0.2rem;
+}
+.map-label--street {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.map-label--canal {
+  font-size: 0.7rem;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: #d3ebfb;
+}
+.map-label--hood {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.82);
+}
+.map-label--building {
+  font-size: 0.7rem;
+  font-style: italic;
+  font-weight: 500;
+  color: #f3ead6;
+}
+.map-label--area {
+  translate: -50% -50%;
+  padding: 0 0.2rem;
+  font-size: 0.7rem;
+  font-style: italic;
+  font-weight: 600;
+  color: #dcf2c4;
+}
+.map-label--station,
+.map-label--civic,
+.map-label--campus,
+.map-label--pin {
+  translate: -50% calc(-100% - 9px);
+}
+.map-label--station::after,
+.map-label--civic::after,
+.map-label--campus::after,
+.map-label--pin::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 3px);
+  width: 6px;
+  height: 6px;
+  translate: -50% 0;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgb(6 14 22 / 0.7);
+}
+.map-label--station {
+  font-size: 0.72rem;
+}
+/* The town hall, a university and the pin of a search are signs, like the country's. */
+.map-label--civic,
+.map-label--campus,
+.map-label--pin {
+  padding: 0.24rem 0.5rem 0.14rem;
+  border-radius: 3px;
+  background: var(--signal);
+  color: var(--signal-ink);
+  font-size: 0.72rem;
+  text-shadow: none;
+  box-shadow: 0 2px 10px rgb(6 14 22 / 0.45);
+}
+.map-label--civic::after,
+.map-label--campus::after,
+.map-label--pin::after {
+  top: 100%;
+  width: 2px;
+  height: 9px;
+  background: var(--signal);
+  box-shadow: none;
+}
+.map-label--campus {
+  background: var(--campus);
+  color: #1c1140;
+}
+.map-label--campus::after {
+  background: var(--campus);
+}
+.map-label--pin {
+  background: #fff;
+  color: #10202e;
+}
+.map-label--pin::after {
+  background: #fff;
+}
+
+/* The country marker on the globe: a sign above a ring that pings. */
+.map-label--country {
+  translate: -50% calc(-100% - 22px);
+  padding: 0.28rem 0.6rem 0.18rem;
+  border-radius: 3px;
+  background: var(--signal);
+  color: var(--signal-ink);
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
+  text-shadow: none;
+}
+.map-label--country::before,
+.map-label--country::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 22px);
+  width: 22px;
+  height: 22px;
+  translate: -50% -50%;
+  border: 2px solid var(--signal);
+  border-radius: 50%;
+}
+.map-label--country::before {
+  animation: ping 2.6s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+}
+@keyframes ping {
+  from {
+    scale: 1;
+    opacity: 0.9;
+  }
+  to {
+    scale: 3.2;
+    opacity: 0;
+  }
+}
+
+.hud {
+  position: absolute;
+  z-index: 3;
+  font-family: var(--font-mono);
+  font-size: 0.69rem;
+  font-weight: 500;
+  line-height: 1.55;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgb(233 229 219 / 0.62);
+  pointer-events: none;
+}
+.hud b {
+  font-weight: 500;
+  color: #e9e5db;
+}
+.hud a {
+  color: inherit;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* A satellite picture in a list (scripts/scene-dialog.ts). */
+.scene-item {
+  display: grid;
+  grid-template-columns: 4.6rem 1fr;
+  gap: 0.7rem;
+  align-items: center;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.scene-item img,
+.scene-item__empty {
+  display: grid;
+  place-items: center;
+  width: 4.6rem;
+  height: 4.6rem;
+  object-fit: cover;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.scene-item:hover img,
+.scene-item:focus-visible img {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+.scene-item__meta {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.scene-item__meta strong {
+  font-size: 0.95rem;
+}
+.scene-item__meta span {
+  font-size: 0.86rem;
+  color: var(--muted);
+}

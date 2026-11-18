@@ -1,0 +1,121 @@
+---
+// A satellite picture shown large: the close-up of the place where the
+// archive has one, and the whole frame. Opened with openScene() from
+// scripts/scene-dialog.ts. One per page. Timelapse.astro is a dialog of
+// the same make and wears these styles too.
+---
+
+<dialog class="scene" data-scene>
+  <form method="dialog" class="scene__bar">
+    <p class="mono" data-scene-label></p>
+    <button type="submit">Close</button>
+  </form>
+  <div class="scene__views" role="group" aria-label="What to show" data-scene-views>
+    <button type="button" data-scene-view="closeup" aria-pressed="true">Close-up</button>
+    <button type="button" data-scene-view="frame" aria-pressed="false">Whole frame</button>
+  </div>
+  <div class="scene__picture">
+    <div class="scene__closeup" data-scene-closeup hidden>
+      <canvas data-scene-canvas></canvas>
+      <span class="scene__pin" data-scene-pin aria-hidden="true"></span>
+    </div>
+    <img data-scene-img alt="" referrerpolicy="no-referrer" hidden />
+  </div>
+  <p class="scene__note" data-scene-note role="status"></p>
+</dialog>
+
+<style is:global>
+  .scene {
+    width: min(46rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 2rem);
+    margin: auto;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--ink-800);
+    color: var(--text);
+    box-shadow: 0 24px 60px rgb(0 0 0 / 0.45);
+  }
+  .scene::backdrop {
+    background: rgb(0 0 0 / 0.6);
+  }
+  .scene__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .scene button {
+    border: 0;
+    border-radius: var(--radius);
+    padding: 0.35em 0.7em;
+    background: color-mix(in srgb, var(--text) 10%, transparent);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .scene__views {
+    display: flex;
+    gap: 0.4rem;
+    padding: 0.6rem 0.9rem;
+  }
+  .scene__views[hidden] {
+    display: none;
+  }
+  .scene__views button[aria-pressed="true"] {
+    background: var(--signal);
+    color: var(--signal-ink);
+  }
+  .scene__picture {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 12rem;
+    background: #0a0c0f;
+  }
+  .scene__picture img {
+    display: block;
+    width: 100%;
+    max-height: min(68dvh, 46rem);
+    object-fit: contain;
+  }
+  /* Square, like the close-up, so the ring can be placed on it. */
+  .scene__closeup {
+    position: relative;
+    width: min(100%, 68dvh, 46rem);
+    aspect-ratio: 1;
+  }
+  .scene__closeup[hidden] {
+    display: none;
+  }
+  .scene__closeup canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  /* The place itself: a ring, so the spot under it stays visible. */
+  .scene__pin {
+    position: absolute;
+    width: 1.5rem;
+    height: 1.5rem;
+    translate: -50% -50%;
+    border: 2px solid var(--signal);
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.6);
+    pointer-events: none;
+  }
+  .scene__note {
+    margin: 0;
+    padding: 0.65rem 0.9rem 0.75rem;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    color: var(--muted);
+  }
+  .scene__note a {
+    color: var(--link);
+  }
+</style>

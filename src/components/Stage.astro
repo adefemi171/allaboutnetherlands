@@ -1,0 +1,27 @@
+---
+// The frame the map is drawn in. A page script starts it with bootStage().
+interface Props {
+  /** Visitors can move the camera. Otherwise the map is illustration. */
+  interactive?: boolean;
+  class?: string;
+}
+const { interactive = false, class: className } = Astro.props;
+---
+
+<div class:list={["stage", className]} data-stage>
+  {
+    interactive ? (
+      <canvas
+        class="stage__canvas"
+        tabindex="0"
+        role="application"
+        aria-label="3D map of the Netherlands. Arrow keys move, plus and minus zoom, Q and E turn, Page Up and Page Down tilt."
+      />
+    ) : (
+      <canvas class="stage__canvas" aria-hidden="true" />
+    )
+  }
+  <div class="stage__labels" aria-hidden="true"></div>
+  <p class="stage__notice mono">Loading the map</p>
+  <slot />
+</div>

@@ -1,0 +1,116 @@
+{
+  "cell": 500,
+  "xMin": -12000,
+  "yMax": 630000,
+  "width": 608,
+  "height": 670,
+  "provinces": [
+    {
+      "name": "Groningen",
+      "code": "PV20",
+      "x": 245772,
+      "y": 581900,
+      "landKm2": 2388
+    },
+    {
+      "name": "Fryslân",
+      "code": "PV21",
+      "x": 185578,
+      "y": 569215,
+      "landKm2": 3540
+    },
+    {
+      "name": "Drenthe",
+      "code": "PV22",
+      "x": 237920,
+      "y": 542366,
+      "landKm2": 2680
+    },
+    {
+      "name": "Overijssel",
+      "code": "PV23",
+      "x": 226945,
+      "y": 495640,
+      "landKm2": 3411
+    },
+    {
+      "name": "Flevoland",
+      "code": "PV24",
+      "x": 169109,
+      "y": 504339,
+      "landKm2": 1473
+    },
+    {
+      "name": "Gelderland",
+      "code": "PV25",
+      "x": 192874,
+      "y": 452613,
+      "landKm2": 5123
+    },
+    {
+      "name": "Utrecht",
+      "code": "PV26",
+      "x": 139631,
+      "y": 455054,
+      "landKm2": 1551
+    },
+    {
+      "name": "Noord-Holland",
+      "code": "PV27",
+      "x": 120042,
+      "y": 510554,
+      "landKm2": 2882
+    },
+    {
+      "name": "Zuid-Holland",
+      "code": "PV28",
+      "x": 92463,
+      "y": 440466,
+      "landKm2": 2971
+    },
+    {
+      "name": "Zeeland",
+      "code": "PV29",
+      "x": 47076,
+      "y": 385943,
+      "landKm2": 1850
+    },
+    {
+      "name": "Noord-Brabant",
+      "code": "PV30",
+      "x": 141246,
+      "y": 396913,
+      "landKm2": 5057
+    },
+    {
+      "name": "Limburg",
+      "code": "PV31",
+      "x": 193159,
+      "y": 357783,
+      "landKm2": 2210
+    }
+  ],
+  "stats": {
+    "landKm2": 34549,
+    "inlandWaterKm2": 586,
+    "shareBelowNap": 0.264,
+    "lowest": {
+      "metres": -6.6,
+      "lat": 51.9843,
+      "lon": 4.6412,
+      "province": "Zuid-Holland"
+    },
+    "highest": {
+      "metres": 302.6,
+      "lat": 50.758,
+      "lon": 6.0143,
+      "province": "Limburg"
+    },
+    "population": 17896010,
+    "populationOnGrid": 17890485,
+    "densestSquare": 7230,
+    "populationYear": 2024,
+    "provinceYear": 2025
+  },
+  "generated": "2026-11-15"
+}

@@ -1,0 +1,38 @@
+---
+// Search over guides and places. Results load on first use.
+interface Props {
+  id: string;
+  placeholder?: string;
+  /**
+   * Also look up Dutch streets and addresses. Only for the map, which can
+   * show them. What is typed goes to PDOK, the Dutch government's map
+   * service, so the box says so.
+   */
+  addresses?: boolean;
+}
+const { id, placeholder = "Search guides and places", addresses = false } = Astro.props;
+---
+
+<div class="search" data-search data-search-addresses={addresses ? "" : undefined}>
+  <label class="visually-hidden" for={id}>Search guides and places</label>
+  <input
+    class="search__field"
+    id={id}
+    type="text"
+    inputmode="search"
+    enterkeyhint="search"
+    placeholder={placeholder}
+    autocomplete="off"
+    spellcheck="false"
+    role="combobox"
+    aria-expanded="false"
+    aria-controls={`${id}-results`}
+    aria-autocomplete="list"
+  />
+  <kbd class="search__key" aria-hidden="true">/</kbd>
+  <ul class="search__results" id={`${id}-results`} role="listbox" hidden></ul>
+</div>
+
+<script>
+  import "../scripts/search";
+</script>

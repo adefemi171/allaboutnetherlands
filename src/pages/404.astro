@@ -1,0 +1,43 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Page not found" description="This page does not exist.">
+  <main id="main" class="wrap missing">
+    <p class="mono">404 · Off the map</p>
+    <h1>There is no page at this address</h1>
+    <p>
+      The link may be old, or the address may have a typing error. The guides
+      and the map are still where they were.
+    </p>
+    <p class="missing__actions">
+      <a class="button" href="/guides/">All guides</a>
+      <a class="button button--quiet" href="/map/">Open the map</a>
+    </p>
+  </main>
+</Base>
+
+<style>
+  .missing {
+    max-width: 40rem;
+    margin-inline: max(clamp(1rem, 4vw, 3rem), (100% - 72rem) / 2) auto;
+    padding-block: clamp(4rem, 14vh, 9rem);
+  }
+  .missing h1 {
+    margin-top: 0.9rem;
+    font-size: clamp(2.1rem, 5vw, 3.4rem);
+    font-weight: 900;
+    letter-spacing: -0.025em;
+    line-height: 1.03;
+  }
+  .missing > p:not(.mono) {
+    margin-top: 1.2rem;
+    font-size: 1.15rem;
+    color: var(--muted);
+  }
+  .missing__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+  }
+</style>

@@ -1,0 +1,33 @@
+---
+// One place through the years: the clearest summer picture Sentinel-2
+// took of it each year, played in a row. Opened with openTimelapse() from
+// scripts/timelapse.ts. Dressed by the styles of SceneDialog.astro, which
+// the page has to carry as well.
+---
+
+<dialog class="scene" data-lapse>
+  <form method="dialog" class="scene__bar">
+    <p class="mono" data-lapse-label></p>
+    <button type="submit">Close</button>
+  </form>
+  <div class="scene__views" role="group" aria-label="Which year to show" data-lapse-years>
+    <button type="button" data-lapse-play aria-pressed="true">Play</button>
+  </div>
+  <div class="scene__picture">
+    <div class="scene__closeup">
+      <canvas data-lapse-canvas></canvas>
+      <span class="scene__pin" data-lapse-pin aria-hidden="true" hidden></span>
+    </div>
+  </div>
+  <p class="scene__note" data-lapse-note role="status"></p>
+</dialog>
+
+<style is:global>
+  .scene__views {
+    flex-wrap: wrap;
+  }
+  .scene__views button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+</style>

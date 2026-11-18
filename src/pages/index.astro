@@ -1,0 +1,550 @@
+---
+import Gauge from "../components/Gauge.astro";
+import Route from "../components/Route.astro";
+import Stage from "../components/Stage.astro";
+import Footer from "../components/Footer.astro";
+import Base from "../layouts/Base.astro";
+import meta from "../data/grid-meta.json";
+
+const stats = meta.stats;
+const number = new Intl.NumberFormat("en-GB");
+const millions = (stats.population / 1e6).toFixed(1);
+const belowNap = Math.round(stats.shareBelowNap * 100);
+
+// The stops of the fly-in. The camera positions live in scripts/story.ts
+// under the same ids.
+const scenes = [
+  { id: "globe", label: "Globe" },
+  { id: "country", label: "Country" },
+  { id: "sea-level", label: "Sea level" },
+  { id: "town-hall", label: "Town hall" },
+];
+---
+
+<Base
+  scene
+  footer={false}
+  preload={[
+    { href: "/data/nl-grid.dat", as: "fetch" },
+    { href: "/data/globe-land.bin", as: "fetch" },
+  ]}
+>
+  <main id="main" class="story">
+    <Stage class="story__stage" />
+    <div class="story__shade" aria-hidden="true"></div>
+
+    <section class="scene scene--hero" id="globe" data-scene="globe">
+      <div class="scene__pin">
+        <div class="scene__text">
+          <p class="mono">
+            52.16°N 5.39°E<span data-clock-hero></span>
+          </p>
+          <h1>The Netherlands survival guide</h1>
+          <p class="scene__lede">
+            Plain-language guides for people moving to the Netherlands: the
+            town hall, a place to live, a bank account, health insurance.
+            Each guide lists the official pages its facts come from.
+          </p>
+          <p class="scene__actions">
+            <a class="button" href="/guides/move-to-the-netherlands/">
+              Start with the checklist
+            </a>
+            <a class="button button--quiet" href="/guides/">All guides</a>
+          </p>
+        </div>
+        <p class="scene__cue mono" aria-hidden="true">
+          <svg width="12" height="16" viewBox="0 0 12 16">
+            <path d="M6 1v13M1.5 9.5 6 14l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          Scroll to fly in
+        </p>
+      </div>
+    </section>
+
+    <section class="scene scene--hold" id="country" data-scene="country">
+      <div class="scene__pin">
+        <div class="scene__text">
+          <p class="mono">The country</p>
+          <h2>{millions} million people, one block at a time</h2>
+          <p>
+            This is the Netherlands in squares of 500 by 500 metres. The
+            ground sits at its measured height. A block stands on every
+            square where people live, and the more residents, the taller
+            the block.
+          </p>
+          <p>
+            <a href="/map/">Open the map</a> to fly around it yourself.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene scene--long" id="sea-level" data-scene="sea-level">
+      <div class="scene__pin">
+        <div class="scene__text">
+          <p class="mono">Sea level</p>
+          <h2>A quarter of it should be under water</h2>
+          <p>
+            Dutch heights are measured from NAP, about the average level of
+            the North Sea. Keep scrolling to let the water rise to that
+            level, as if the dunes, dikes and pumps were gone.
+          </p>
+          <div class="level">
+            <Gauge class="level__gauge is-on" min={-7} max={5} />
+            <p class="level__readout">
+              <span class="level__value" data-level-value>NAP</span>
+              <span class="level__share">
+                <b data-level-share>{belowNap}%</b> of the land lies below this level
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene scene--hold" id="town-hall" data-scene="town-hall">
+      <div class="scene__pin">
+        <div class="scene__text">
+          <p class="mono">Where a move starts</p>
+          <h2>Your first appointment is at the town hall</h2>
+          <p>
+            Almost everything else waits for one thing: registering your
+            address with the municipality. That is how you get a BSN, the
+            number your employer, your bank, your health insurer and the tax
+            office will ask for.
+          </p>
+          <p class="scene__actions">
+            <a class="button" href="/guides/register-and-get-a-bsn/">
+              Register and get a BSN
+            </a>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <nav class="ticks" aria-label="Parts of the introduction" data-ticks>
+      {
+        scenes.map((scene) => (
+          <a href={`#${scene.id}`} data-tick={scene.id}>
+            <span>{scene.label}</span>
+          </a>
+        ))
+      }
+    </nav>
+    <p class="hud story__clock" data-clock></p>
+    <p class="hud story__credit">
+      Heights AHN · People CBS {stats.populationYear} ·
+      <a href="/about/#data">Sources</a>
+    </p>
+
+    <div class="after" data-after>
+      <section class="wrap steps" aria-labelledby="steps-title">
+        <div class="steps__intro">
+          <p class="mono">The guides</p>
+          <h2 id="steps-title">A move, in the order it happens</h2>
+          <p>
+            Start at the top and work down. Each guide says what to do, what
+            to bring, what it costs and how long it takes, and lists the
+            official pages its facts come from.
+          </p>
+        </div>
+        <Route level={3} />
+      </section>
+
+      <section class="wrap invite">
+        <div>
+          <p class="mono">The map</p>
+          <h2>Look around before you choose where to live</h2>
+          <p>
+            Fly to any city, see how many people live around it and how high
+            it sits, move the sun, or raise the water yourself.
+          </p>
+          <p class="scene__actions">
+            <a class="button" href="/map/">Open the map</a>
+            <a class="button button--quiet" href="/about/#map">How to read it</a>
+          </p>
+        </div>
+        <dl class="invite__facts">
+          <div>
+            <dt class="mono">One square</dt>
+            <dd>500 × 500 m</dd>
+          </div>
+          <div>
+            <dt class="mono">Residents counted</dt>
+            <dd>{number.format(stats.population)}</dd>
+          </div>
+          <div>
+            <dt class="mono">Lowest square</dt>
+            <dd>NAP −{Math.abs(stats.lowest.metres).toFixed(1)} m</dd>
+          </div>
+          <div>
+            <dt class="mono">Land below NAP</dt>
+            <dd>{belowNap}%</dd>
+          </div>
+        </dl>
+      </section>
+
+      <Footer />
+    </div>
+  </main>
+</Base>
+
+<script>
+  import "../scripts/story";
+</script>
+
+<style>
+  .story {
+    position: relative;
+  }
+  .story :global(.story__stage) {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+  /* While the map loads, say so where the globe will appear. */
+  .story :global(.stage__notice) {
+    place-content: center end;
+    padding-right: 20vw;
+  }
+  .story :global(.stage.has-failed .stage__notice) {
+    display: none;
+  }
+  /* Darkens the side the words are on, so they read over any scene. */
+  .story__shade {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(
+      90deg,
+      rgb(11 22 32 / 0.9),
+      rgb(11 22 32 / 0.72) 28%,
+      rgb(11 22 32 / 0) 58%
+    );
+    pointer-events: none;
+  }
+
+  /* Each scene pins its words to the screen while its section scrolls by.
+     The camera holds still for that stretch, then travels to the next. */
+  .scene {
+    position: relative;
+    z-index: 2;
+    height: 100lvh;
+    pointer-events: none;
+  }
+  .scene--hold {
+    height: 170lvh;
+  }
+  .scene--long {
+    height: 320lvh;
+  }
+  .scene__pin {
+    position: sticky;
+    top: 0;
+    display: grid;
+    align-content: center;
+    height: 100svh;
+    width: min(100% - 2 * clamp(1rem, 3vw, 2.5rem), 96rem);
+    margin-inline: auto;
+    padding-top: var(--header-offset);
+  }
+  .scene__text {
+    max-width: 31rem;
+    pointer-events: auto;
+  }
+  .scene__text > * + * {
+    margin-top: 1.1rem;
+  }
+  /* The title may run wider than the text under it. */
+  .scene--hero .scene__text {
+    max-width: 46rem;
+  }
+  .scene--hero .scene__lede {
+    max-width: 31rem;
+  }
+  .scene h1 {
+    font-size: clamp(2.7rem, 6.2vw, 5.2rem);
+    font-weight: 900;
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+  }
+  .scene h2 {
+    font-size: clamp(2rem, 3.6vw, 3.1rem);
+    line-height: 1.04;
+    letter-spacing: -0.02em;
+  }
+  .scene p {
+    color: #d5d9dc;
+  }
+  .scene p.mono {
+    color: var(--signal);
+  }
+  .scene__lede {
+    font-size: 1.2rem;
+    line-height: 1.5;
+  }
+  .scene__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    padding-top: 0.5rem;
+  }
+  .scene__cue {
+    position: absolute;
+    left: 0;
+    bottom: 3.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .scene__cue svg {
+    animation: nudge 1.8s ease-in-out infinite;
+  }
+  @keyframes nudge {
+    50% {
+      translate: 0 4px;
+    }
+  }
+
+  /* The water level, read off a staff gauge. */
+  .level {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 1.3rem;
+    padding-top: 0.6rem;
+  }
+  .level :global(.level__gauge) {
+    height: 11.5rem;
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
+  }
+  .level__readout {
+    display: grid;
+    gap: 0.5rem;
+  }
+  .level__value {
+    font-family: var(--font-mono);
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+  .level__share {
+    max-width: 14rem;
+    line-height: 1.4;
+  }
+  .level__share b {
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Where you are in the fly-in. */
+  .ticks {
+    position: fixed;
+    right: clamp(1rem, 3vw, 2.5rem);
+    top: 50%;
+    z-index: 3;
+    display: grid;
+    gap: 0.2rem;
+    translate: 0 -50%;
+    transition: opacity 0.3s;
+  }
+  .ticks a {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    padding: 0.35rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: rgb(233 229 219 / 0.55);
+  }
+  .ticks a::after {
+    content: "";
+    width: 1rem;
+    height: 2px;
+    background: currentColor;
+    transition: width 0.2s;
+  }
+  .ticks a span {
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .ticks a:hover span,
+  .ticks a:focus-visible span,
+  .ticks a[aria-current] span {
+    opacity: 1;
+  }
+  .ticks a[aria-current] {
+    color: var(--signal);
+  }
+  .ticks a[aria-current]::after {
+    width: 1.8rem;
+  }
+  .story.is-past .ticks,
+  .story.is-past .hud {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .hud {
+    position: fixed;
+    bottom: 1rem;
+    transition: opacity 0.3s;
+  }
+  .story__clock {
+    left: clamp(1rem, 3vw, 2.5rem);
+  }
+  .story__credit {
+    right: clamp(1rem, 3vw, 2.5rem);
+    text-align: right;
+  }
+
+  /* Below the fly-in the page is an ordinary page again. */
+  .after {
+    position: relative;
+    z-index: 4;
+    background: var(--bg);
+    border-top: 1px solid var(--line);
+  }
+  .after :global(.site-footer) {
+    margin-top: 0;
+  }
+  .after h2 {
+    font-size: clamp(1.9rem, 3.4vw, 2.8rem);
+    letter-spacing: -0.02em;
+  }
+  .steps {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(2rem, 6vw, 6rem);
+    padding-block: clamp(4rem, 9vw, 7.5rem);
+  }
+  .steps__intro {
+    position: sticky;
+    top: calc(var(--header-offset) + 1.5rem);
+    align-self: start;
+  }
+  .steps__intro > * + * {
+    margin-top: 1rem;
+  }
+  .invite {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(2rem, 6vw, 6rem);
+    align-items: center;
+    padding-block: clamp(3rem, 7vw, 5.5rem);
+    border-top: 1px solid var(--line);
+  }
+  .invite > div > * + * {
+    margin-top: 1rem;
+  }
+  .invite__facts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    margin: 0;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+  .invite__facts div {
+    padding: 1.2rem 1.3rem 1.1rem;
+    background: var(--bg);
+  }
+  .invite__facts dd {
+    margin: 0.35rem 0 0;
+    font-family: var(--font-mono);
+    font-size: clamp(1.25rem, 2.2vw, 1.7rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 820px) {
+    /* On a phone the words sit at the bottom and the map above them. */
+    .story__shade {
+      background: linear-gradient(
+        0deg,
+        rgb(11 22 32 / 0.96) 0%,
+        rgb(11 22 32 / 0.88) 34%,
+        rgb(11 22 32 / 0.35) 58%,
+        rgb(11 22 32 / 0) 78%
+      );
+    }
+    .scene__pin {
+      align-content: end;
+      width: min(100% - 1.5rem, 96rem);
+      padding-bottom: calc(3.2rem + var(--safe-bottom));
+    }
+    .scene--hero .scene__text {
+      max-width: none;
+    }
+    .scene h1 {
+      font-size: clamp(2.15rem, 11vw, 3.2rem);
+    }
+    .scene h2 {
+      font-size: clamp(1.55rem, 7vw, 2.2rem);
+    }
+    .scene__lede {
+      font-size: 1.02rem;
+      line-height: 1.45;
+    }
+    .scene__text > * + * {
+      margin-top: 0.85rem;
+    }
+    .scene__actions {
+      gap: 0.55rem;
+      padding-top: 0.25rem;
+    }
+    .scene__actions .button {
+      min-height: 2.75rem;
+      justify-content: center;
+    }
+    .scene__cue,
+    .ticks,
+    .story__credit {
+      display: none;
+    }
+    .story__clock {
+      left: 0.75rem;
+      bottom: calc(0.65rem + var(--safe-bottom));
+      max-width: calc(100% - 1.5rem);
+      font-size: 0.62rem;
+    }
+    .level {
+      gap: 0.9rem;
+    }
+    .level :global(.level__gauge) {
+      height: 7.2rem;
+    }
+    .level__value {
+      font-size: 1.55rem;
+    }
+    .steps,
+    .invite {
+      grid-template-columns: minmax(0, 1fr);
+      padding-block: 3rem;
+    }
+    .steps__intro {
+      position: static;
+    }
+    .invite__facts {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .scene__actions {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+    .scene__actions .button {
+      width: 100%;
+    }
+  }
+</style>

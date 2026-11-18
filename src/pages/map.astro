@@ -1,0 +1,810 @@
+---
+import Gauge from "../components/Gauge.astro";
+import SceneDialog from "../components/SceneDialog.astro";
+import Search from "../components/Search.astro";
+import Stage from "../components/Stage.astro";
+import Base from "../layouts/Base.astro";
+import meta from "../data/grid-meta.json";
+import { reportEndpoint } from "../data/report";
+import { BUILDING_ERAS, STREET } from "../map/style";
+---
+
+<Base
+  title="Map"
+  description="The Netherlands as a 3D model built from open data. From orbit down to your street: real ground heights, a block for every square where people live, and every street and building once you zoom in."
+  scene
+  footer={false}
+  preload={[
+    { href: "/data/nl-grid.dat", as: "fetch" },
+    { href: "/data/globe-land.bin", as: "fetch" },
+  ]}
+>
+  <main id="main" class="explore">
+    <h1 class="visually-hidden">Map of the Netherlands</h1>
+
+    <Stage interactive class="explore__stage">
+      <div class="explore__foot">
+        <p class="hud explore__status" data-street-status role="status" hidden></p>
+        <p class="hud" data-readout></p>
+      </div>
+      <p class="hud explore__credit" data-map-credit>
+        Heights AHN · People CBS {meta.stats.populationYear} · Streets Kadaster ·
+        Buildings 3DBAG ·
+        <a href="/about/#data">Sources</a>
+      </p>
+    </Stage>
+
+    <div class="explore__left">
+      <Search id="map-search" placeholder="Find a city, a university, a street" addresses />
+
+      <article class="card place" data-place hidden>
+        <button class="place__close" type="button" data-place-close aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+            <path d="M2 2l10 10M12 2 2 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+          </svg>
+        </button>
+        <p class="mono" data-place-kind></p>
+        <h2 data-place-name></h2>
+        <p class="place__blurb" data-place-blurb></p>
+        <dl class="place__facts">
+          <div>
+            <dt class="mono">Within 5 km</dt>
+            <dd data-place-people></dd>
+          </div>
+          <div>
+            <dt class="mono">Ground level</dt>
+            <dd data-place-level></dd>
+          </div>
+        </dl>
+        <p class="place__actions">
+          <button class="button button--small" type="button" data-place-streets>
+            See the streets
+          </button>
+          <button class="button button--small button--quiet" type="button" data-overhead-from-place>
+            What watched here
+          </button>
+        </p>
+        <p class="place__links" data-place-links>
+          Moving here? <a href="/guides/register-and-get-a-bsn/">Register your address</a> and <a href="/guides/find-a-home/">find a home</a>.
+        </p>
+      </article>
+
+      <article class="card overhead" data-overhead hidden>
+        <button class="place__close" type="button" data-overhead-close aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+            <path d="M2 2l10 10M12 2 2 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+          </svg>
+        </button>
+        <p class="mono">What watched here</p>
+        <h2 data-overhead-where>Map centre</h2>
+        <p class="overhead__status" data-overhead-status role="status">Looking up recent satellite photos…</p>
+        <ul class="overhead__list" data-overhead-list></ul>
+        <p class="overhead__credit">
+          Sentinel-2 via Element84 Earth Search · last 7 days · Dutch time ·
+          <a href="/satellite/" data-overhead-satellite>Full satellite view</a>
+        </p>
+      </article>
+    </div>
+
+    <SceneDialog />
+
+    <details class="card controls" data-controls open>
+      <summary>
+        <span>Light and water</span>
+        <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+          <path d="M2 4.5 6 8.5l4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </summary>
+      <div class="controls__body">
+        <fieldset>
+          <legend class="mono">Dutch time</legend>
+          <p class="controls__value" data-time-label>&nbsp;</p>
+          <label class="slider">
+            <span>Time of day</span>
+            <input type="range" min="0" max="1435" step="5" data-time />
+          </label>
+          <label class="slider">
+            <span>Day of the year</span>
+            <input type="range" min="1" max="365" step="1" data-day />
+          </label>
+          <p class="controls__note" data-sun>&nbsp;</p>
+          <button class="button button--quiet controls__now" type="button" data-now hidden>
+            Back to now
+          </button>
+        </fieldset>
+
+        <fieldset>
+          <legend class="mono">Sky</legend>
+          <div class="segmented">
+            <label><input type="radio" name="sky" value="0" data-sky checked /><span>Clear</span></label>
+            <label><input type="radio" name="sky" value="1" data-sky /><span>Overcast</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend class="mono">Ground</legend>
+          <div class="segmented">
+            <label><input type="radio" name="ground" value="model" data-ground checked /><span>Model</span></label>
+            <label><input type="radio" name="ground" value="aerial" data-ground /><span>Aerial</span></label>
+          </div>
+          <p class="controls__note">
+            Model is the atlas of heights and people. Aerial is the latest
+            open orthophoto from Beeldmateriaal.nl via PDOK. Zoom in for
+            streets and 3D buildings on top of the photo.
+          </p>
+        </fieldset>
+
+        <fieldset>
+          <legend class="mono">On the map</legend>
+          <label class="check check--first">
+            <input type="checkbox" data-show="university" checked />
+            <span class="swatch swatch--university" aria-hidden="true"></span>
+            <span>Universities</span>
+          </label>
+          <label class="check">
+            <input type="checkbox" data-show="landmark" checked />
+            <span class="swatch swatch--landmark" aria-hidden="true"></span>
+            <span>Landmarks</span>
+          </label>
+          <label class="check">
+            <input type="checkbox" data-show="people" checked />
+            <span>People and traffic</span>
+          </label>
+          <label class="check">
+            <input type="checkbox" data-overhead-toggle />
+            <span>What watched here</span>
+          </label>
+          <p class="controls__note">
+            From afar they are dots: point at one for its name, press it to
+            go there. Once you are close to the ground, walkers, cyclists,
+            cars and trains appear, and the street lamps come on after dark.
+            The traffic is made up. What watched here lists recent
+            Sentinel-2 photos over the place you picked, or the map centre.
+          </p>
+        </fieldset>
+
+        <fieldset class="water">
+          <legend class="mono">Water level</legend>
+          <div class="water__row">
+            <Gauge input />
+            <div class="water__text">
+              <p class="controls__value" data-level-label>NAP</p>
+              <p class="controls__note" data-share>&nbsp;</p>
+              <label class="check">
+                <input type="checkbox" data-flood />
+                <span>Take away the dikes</span>
+              </label>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="legend" data-legend="streets" hidden>
+          <p class="mono">Year built</p>
+          <ul class="legend__eras">
+            {BUILDING_ERAS.map((era) => (
+              <li>
+                <span style={`background: ${era.walls[0]}`} aria-hidden="true"></span>
+                {era.label}
+              </li>
+            ))}
+          </ul>
+          <p class="controls__note">
+            The colour of a wall shows when the building went up. It is a key,
+            not the colour of the brick. Heights are real, measured from the
+            air.
+            <span class="legend__lane" style={`background: ${STREET.cycle}`} aria-hidden="true"></span>
+            Red lanes are cycle paths.
+          </p>
+        </div>
+
+        <div class="legend" data-legend="model">
+          <p class="mono">Ground height</p>
+          <div class="legend__ramp" aria-hidden="true"></div>
+          <div class="legend__scale mono" aria-hidden="true">
+            <span>−7 m</span><span>NAP</span><span>+25</span><span>+300</span>
+          </div>
+          <p class="controls__note">
+            Blue-green land is below sea level. Each block stands on one
+            500 m square; the taller it is, the more people live there.
+            Heights are stretched so you can see them. Zoom in far enough
+            and the squares give way to real streets and buildings.
+          </p>
+        </div>
+
+        {
+          reportEndpoint && (
+            <p class="controls__note controls__report">
+              Something wrong on the map?
+              <button class="text-button" type="button" data-report-open>
+                Report a problem
+              </button>
+            </p>
+          )
+        }
+      </div>
+    </details>
+
+    <div class="nudge" role="group" aria-label="Move the map">
+      <button type="button" data-nudge="in" aria-label="Zoom in">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
+      </button>
+      <button type="button" data-nudge="out" aria-label="Zoom out">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
+      </button>
+      <button type="button" data-nudge="left" aria-label="Turn left">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8a4.5 4.5 0 1 0 1.6-3.4M3 2.5v3h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </button>
+      <button type="button" data-nudge="right" aria-label="Turn right">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M12.5 8a4.5 4.5 0 1 1-1.6-3.4M13 2.5v3h-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </button>
+      <button type="button" data-nudge="streets" aria-label="Go down to the streets" aria-pressed="false" data-streets-toggle>
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 14V7.5l3-1.5v8M8 14V3.5l5.5 2V14M1.5 14h13M10.3 7.2v.1M10.3 10v.1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </button>
+      <button type="button" data-nudge="flat" aria-label="Switch between top view and tilted view">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 11 8 8l6 3-6 3zM8 2v4M6.3 4.3 8 6l1.7-1.7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </button>
+    </div>
+  </main>
+</Base>
+
+<script>
+  import "../scripts/explore";
+</script>
+
+<style>
+  .explore {
+    position: fixed;
+    inset: 0;
+  }
+  .explore :global(.explore__stage) {
+    position: absolute;
+    inset: 0;
+    touch-action: none;
+  }
+  .explore :global(.stage__canvas) {
+    cursor: grab;
+  }
+  .explore :global(.stage__canvas:active) {
+    cursor: grabbing;
+  }
+
+  .explore__foot {
+    position: absolute;
+    left: 1.1rem;
+    bottom: 1rem;
+    z-index: 3;
+    display: grid;
+    gap: 0.45rem;
+    justify-items: start;
+    max-width: min(46rem, calc(100% - 2.2rem));
+    pointer-events: none;
+  }
+  .explore__foot .hud {
+    position: static;
+  }
+  .explore__status {
+    padding: 0.3rem 0.6rem 0.2rem;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--ink-800) 88%, transparent);
+    color: #e9e5db;
+  }
+  .explore__status.is-failed {
+    background: var(--signal);
+    color: var(--signal-ink);
+  }
+  .explore__credit {
+    right: 1.1rem;
+    bottom: 1rem;
+    text-align: right;
+  }
+
+  .card {
+    background: color-mix(in srgb, var(--ink-800) 90%, transparent);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 16px 40px rgb(0 0 0 / 0.3);
+  }
+
+  .explore__left {
+    position: absolute;
+    left: 1.1rem;
+    top: calc(var(--header-offset) + 0.6rem);
+    z-index: 5;
+    display: grid;
+    gap: 0.6rem;
+    width: min(21rem, calc(100% - 2.2rem));
+  }
+  .explore__left :global(.search) {
+    width: 100%;
+  }
+  .explore__left :global(.search__field) {
+    height: 2.7rem;
+    background-color: color-mix(in srgb, var(--ink-800) 90%, transparent);
+    backdrop-filter: blur(12px);
+  }
+
+  .place {
+    position: relative;
+    padding: 1.1rem 1.2rem 1.2rem;
+  }
+  .place h2 {
+    margin-top: 0.35rem;
+    padding-right: 2rem;
+    font-size: 1.45rem;
+  }
+  .place__blurb {
+    margin-top: 0.6rem;
+    font-size: 0.97rem;
+    line-height: 1.5;
+  }
+  .place__facts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    margin: 1rem 0 0;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+  }
+  .place__facts dd {
+    margin: 0.15rem 0 0;
+    font-weight: 700;
+    font-size: 0.98rem;
+  }
+  .place__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 1rem;
+  }
+  .place__actions .button {
+    padding: 0.5em 0.9em 0.4em;
+    font-size: 0.92rem;
+  }
+
+  .overhead {
+    position: relative;
+    padding: 1.1rem 1.2rem 1.05rem;
+  }
+  .overhead h2 {
+    margin-top: 0.35rem;
+    padding-right: 2rem;
+    font-size: 1.2rem;
+  }
+  .overhead__status {
+    margin-top: 0.55rem;
+    font-size: 0.93rem;
+    line-height: 1.45;
+    color: var(--muted);
+  }
+  .overhead__status[hidden] {
+    display: none;
+  }
+  .overhead__list {
+    display: grid;
+    gap: 0.55rem;
+    margin: 0.85rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .overhead__list:empty {
+    display: none;
+  }
+  .overhead__credit {
+    margin-top: 0.85rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: var(--muted);
+  }
+
+  .place__links {
+    margin-top: 0.9rem;
+    font-size: 0.93rem;
+    color: var(--muted);
+  }
+  .place__close {
+    position: absolute;
+    right: 0.6rem;
+    top: 0.6rem;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border: 0;
+    border-radius: var(--radius);
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .place__close:hover {
+    color: var(--text);
+    background: color-mix(in srgb, var(--text) 10%, transparent);
+  }
+
+  .controls {
+    position: absolute;
+    right: 1.1rem;
+    top: calc(var(--header-offset) + 0.6rem);
+    z-index: 5;
+    width: 18.5rem;
+    max-height: calc(100dvh - var(--header-offset) - 4.5rem);
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+  .controls summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 2.75rem;
+    padding: 0.75rem 1.1rem 0.65rem;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+    touch-action: manipulation;
+  }
+  .controls summary::-webkit-details-marker {
+    display: none;
+  }
+  .controls summary svg {
+    transition: rotate 0.2s;
+  }
+  .controls[open] summary svg {
+    rotate: 180deg;
+  }
+  .controls__body {
+    display: grid;
+    gap: 1.15rem;
+    padding: 0.35rem 1.1rem 1.2rem;
+  }
+  fieldset {
+    margin: 0;
+    padding: 0.95rem 0 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+    min-width: 0;
+  }
+  legend {
+    float: left;
+    width: 100%;
+    padding: 0;
+    margin-bottom: 0.45rem;
+  }
+  legend + * {
+    clear: both;
+  }
+  .controls__value {
+    font-family: var(--font-mono);
+    font-size: 1.02rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  .controls__note {
+    margin-top: 0.5rem;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    color: var(--muted);
+  }
+  .controls__report {
+    margin-top: 0;
+    padding-top: 0.95rem;
+    border-top: 1px solid var(--line);
+  }
+  .controls__report button {
+    color: var(--text);
+  }
+  .controls__now {
+    margin-top: 0.7rem;
+    padding: 0.45em 0.8em 0.35em;
+    font-size: 0.88rem;
+  }
+
+  .slider {
+    display: grid;
+    gap: 0.1rem;
+    margin-top: 0.6rem;
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+  input[type="range"] {
+    width: 100%;
+    margin: 0;
+    accent-color: var(--signal);
+  }
+
+  .segmented {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .segmented label {
+    position: relative;
+    cursor: pointer;
+  }
+  .segmented input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    cursor: pointer;
+  }
+  .segmented span {
+    display: block;
+    padding: 0.45rem 0 0.35rem;
+    text-align: center;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .segmented input:checked + span {
+    background: var(--signal);
+    color: var(--signal-ink);
+  }
+  .segmented input:focus-visible + span {
+    outline: 2px solid var(--text);
+    outline-offset: -3px;
+  }
+
+  .water__row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+    align-items: start;
+  }
+  .check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.8rem;
+    font-size: 0.93rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .check input {
+    width: 1.05rem;
+    height: 1.05rem;
+    margin: 0;
+    accent-color: var(--signal);
+  }
+  .check--first {
+    margin-top: 0.2rem;
+  }
+  .check + .check {
+    margin-top: 0.55rem;
+  }
+  .swatch {
+    flex: none;
+    width: 0.55rem;
+    height: 0.55rem;
+    margin-right: -0.1rem;
+  }
+  .swatch--university {
+    background: var(--campus);
+  }
+  .swatch--landmark {
+    rotate: 45deg;
+    background: var(--signal);
+  }
+
+  .legend {
+    padding-top: 0.95rem;
+    border-top: 1px solid var(--line);
+  }
+  .legend__ramp {
+    height: 0.7rem;
+    margin-top: 0.5rem;
+    border-radius: 2px;
+    /* Same stops as the land colours in src/map/style.ts. */
+    background: linear-gradient(
+      to right,
+      #2a8a86 0%,
+      #5faa7d 22%,
+      #7fb873 33%,
+      #a5c669 33%,
+      #c9d273 48%,
+      #dcc079 66%,
+      #b08c5a 84%,
+      #8a6248 100%
+    );
+  }
+  .legend__scale {
+    display: grid;
+    grid-template-columns: 33% 33% 1fr auto;
+    margin-top: 0.3rem;
+    font-size: 0.62rem;
+  }
+  .legend__eras {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.3rem 0.8rem;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.84rem;
+  }
+  .legend__eras li {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .legend__eras span {
+    flex: none;
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 2px;
+  }
+  .legend__lane {
+    display: inline-block;
+    width: 1.1rem;
+    height: 0.3rem;
+    margin: 0 0.15rem 0.12rem 0.1rem;
+    border-radius: 1px;
+    vertical-align: middle;
+  }
+  .legend__scale span:nth-child(2) {
+    translate: -50% 0;
+    width: max-content;
+  }
+
+  .nudge {
+    position: absolute;
+    right: 1.1rem;
+    bottom: 3rem;
+    z-index: 4;
+    display: grid;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--ink-800) 90%, transparent);
+    backdrop-filter: blur(12px);
+    overflow: hidden;
+  }
+  .nudge button {
+    display: grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border: 0;
+    background: none;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .nudge button + button {
+    border-top: 1px solid var(--line);
+  }
+  .nudge button:hover {
+    background: color-mix(in srgb, var(--text) 10%, transparent);
+  }
+  .nudge button:focus-visible {
+    outline-offset: -3px;
+  }
+  .nudge button[aria-pressed="true"] {
+    background: var(--signal);
+    color: var(--signal-ink);
+  }
+
+  @media (max-width: 720px) {
+    /*
+     * Space under the closed controls strip, clear of the home indicator and
+     * the overlapping mobile browser toolbar (Safari sits on top of the page).
+     */
+    .explore {
+      --dock: calc(var(--safe-bottom) + var(--browser-bottom));
+      --controls-bar: 3.4rem;
+    }
+    .explore__left {
+      left: 0.75rem;
+      top: calc(var(--header-offset) + 0.45rem);
+      width: calc(100% - 1.5rem);
+      max-height: calc(
+        100dvh - var(--header-offset) - var(--controls-bar) - var(--dock) - 1.5rem
+      );
+      overflow: auto;
+      overscroll-behavior: contain;
+      pointer-events: none;
+    }
+    .explore__left > :global(*) {
+      pointer-events: auto;
+    }
+    .explore__left :global(.search__results) {
+      min-width: 0;
+      width: 100%;
+      max-height: min(16rem, 38dvh);
+    }
+    .place,
+    .overhead {
+      max-height: min(38dvh, 20rem);
+      overflow: auto;
+      overscroll-behavior: contain;
+      padding: 1rem 1rem 1.05rem;
+    }
+    .overhead {
+      max-height: min(48dvh, 26rem);
+    }
+    .place h2 {
+      font-size: 1.25rem;
+    }
+    .place__close {
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+    .controls {
+      inset: auto 0 0;
+      width: auto;
+      max-height: min(52dvh, calc(100dvh - var(--header-offset) - 3rem));
+      padding-bottom: var(--dock);
+      border-radius: 14px 14px 0 0;
+      border-width: 1px 0 0;
+      box-shadow: 0 -12px 40px rgb(0 0 0 / 0.35);
+    }
+    .controls summary {
+      position: relative;
+      justify-content: center;
+      min-height: var(--controls-bar);
+      padding: 1.2rem 2.6rem 0.9rem;
+      font-size: 0.95rem;
+    }
+    .controls summary::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 0.45rem;
+      width: 2.4rem;
+      height: 0.28rem;
+      translate: -50% 0;
+      border-radius: 99px;
+      background: color-mix(in srgb, var(--text) 28%, transparent);
+    }
+    .controls summary svg {
+      position: absolute;
+      right: 1.1rem;
+      top: 50%;
+      translate: 0 -35%;
+    }
+    .controls[open] {
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .controls:not([open]) {
+      overflow: visible;
+    }
+    .explore__foot {
+      left: 0.75rem;
+      bottom: calc(var(--controls-bar) + var(--dock) + 0.65rem);
+      max-width: calc(100% - 5.2rem);
+    }
+    .explore__foot .hud {
+      font-size: 0.64rem;
+      letter-spacing: 0.05em;
+      line-height: 1.45;
+      text-wrap: pretty;
+    }
+    .explore__credit {
+      display: none;
+    }
+    /* Pinching does the rest on a phone. The way down to the streets stays. */
+    .nudge {
+      right: 0.75rem;
+      bottom: calc(var(--controls-bar) + var(--dock) + 0.65rem);
+    }
+    .nudge button {
+      width: 2.85rem;
+      height: 2.85rem;
+    }
+    .nudge button:not([data-streets-toggle]) {
+      display: none;
+    }
+    .check,
+    .slider,
+    .segmented span {
+      min-height: 2.5rem;
+    }
+    .segmented span {
+      display: grid;
+      place-items: center;
+      padding: 0.55rem 0.4rem;
+    }
+  }
+</style>

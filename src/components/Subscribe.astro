@@ -1,0 +1,139 @@
+---
+// The newsletter sign-up: one field and a button. Where the address goes
+// is set in src/data/report.ts.
+import { newsletterEndpoint, ownerMail } from "../data/report";
+
+interface Props {
+  /** Makes the ids unique when a page has more than one of these. */
+  id: string;
+  /** The small version in the footer of every page. */
+  compact?: boolean;
+}
+const { id, compact = false } = Astro.props;
+---
+
+<form
+  class:list={["subscribe", { "subscribe--compact": compact }]}
+  data-subscribe
+  data-endpoint={newsletterEndpoint}
+  data-mail={ownerMail}
+  novalidate
+>
+  <label for={`${id}-email`}>Your email address</label>
+  <div class="subscribe__row">
+    <input
+      id={`${id}-email`}
+      name="email"
+      type="email"
+      autocomplete="email"
+      placeholder="you@example.com"
+      required
+      aria-describedby={`${id}-note`}
+    />
+    <button class="button" type="submit">Sign up</button>
+  </div>
+  <!-- Left empty by people. Programs that fill in every field give themselves away. -->
+  <div class="subscribe__trap" aria-hidden="true">
+    <label>
+      Leave this empty
+      <input name="_gotcha" type="text" tabindex="-1" autocomplete="off" />
+    </label>
+  </div>
+  <p class="subscribe__note" id={`${id}-note`} data-subscribe-note role="status">
+    {
+      compact
+        ? "Used for the newsletter and nothing else."
+        : "Your address is used for the newsletter and nothing else. To stop, reply to any issue or write to the address on the contact page."
+    }
+  </p>
+</form>
+
+<script>
+  import "../scripts/subscribe";
+</script>
+
+<style>
+  .subscribe label {
+    display: block;
+    font-weight: 700;
+  }
+  .subscribe__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.45rem;
+  }
+  .subscribe input[type="email"] {
+    flex: 1 1 14rem;
+    min-width: 0;
+    padding: 0.65rem 0.75rem 0.55rem;
+    border: 1px solid var(--muted);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    line-height: 1.3;
+  }
+  .subscribe__note {
+    margin-top: 0.6rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+  .subscribe__note.is-error {
+    padding: 0.6rem 0.8rem 0.5rem;
+    border-left: 4px solid var(--signal);
+    background: var(--mark);
+    color: var(--text);
+  }
+  .subscribe__note.is-done {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .subscribe__trap {
+    position: absolute;
+    left: -200vw;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .subscribe--compact label {
+    font-weight: 400;
+  }
+  .subscribe--compact input[type="email"] {
+    flex-basis: 9rem;
+    padding: 0.45rem 0.6rem 0.35rem;
+  }
+  .subscribe--compact .button {
+    padding: 0.5em 0.85em 0.4em;
+  }
+  .subscribe--compact .subscribe__note {
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 560px) {
+    .subscribe__row {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+    .subscribe input[type="email"],
+    .subscribe .button {
+      width: 100%;
+    }
+    .subscribe .button {
+      justify-content: center;
+      min-height: 2.85rem;
+    }
+    .subscribe--compact .subscribe__row {
+      display: flex;
+    }
+    .subscribe--compact input[type="email"] {
+      flex: 1 1 auto;
+    }
+    .subscribe--compact .button {
+      width: auto;
+      min-height: 2.5rem;
+    }
+  }
+</style>
