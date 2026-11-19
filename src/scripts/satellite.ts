@@ -10,11 +10,12 @@ import { matchPasses } from "../satellite/match";
 import { defaultWindow, watchers } from "../satellite/passes";
 import { findPasses } from "../satellite/pool";
 import { LABEL_COPY } from "../satellite/profile";
-import { describeScene, searchScenes } from "../satellite/scenes";
+import { describeScene, searchWeekOfScenes } from "../satellite/scenes";
 import { formatAway, formatClock, formatWhen } from "../satellite/time";
 import { ROWS, Timeline } from "../satellite/timeline";
 import type { GpRecord, MatchedPass, PassLabel, SatKind } from "../satellite/types";
 import { Gallery } from "./gallery";
+import { ReplayCapture } from "../satellite/replay-capture";
 import { openScene } from "./scene-dialog";
 import { openTimelapse } from "./timelapse";
 
@@ -134,6 +135,11 @@ function main(): void {
     tip.style.top = `${y}px`;
   };
 
+  const replayCapture = new ReplayCapture($<HTMLElement>("[data-sat-replay-capture]")!);
+  const replayHud = $<HTMLElement>("[data-sat-replay]");
+  const replayProgress = $<HTMLInputElement>("[data-sat-replay-progress]");
+  const replayPlayback = $<HTMLButtonElement>("[data-sat-replay-playback]");
+  const replayFollow = $<HTMLButtonElement>("[data-sat-replay-follow]");
   const globe = new SatelliteGlobe(canvas, {
     onHover(hovered) {
       hint(
@@ -142,9 +148,22 @@ function main(): void {
         hovered?.y,
       );
     },
-    onTime(date, live) {
+    onTime(date, live, frame) {
       const what = live ? "Now" : date.getTime() > Date.now() ? "Still to come" : "Replay";
       setText("[data-sat-clock]", `${what} · ${formatClock(date)}`);
+      if (replayHud) replayHud.hidden = !frame;
+      if (frame) {
+        replayCapture.update(frame.scan, frame.scanDirection);
+        if (replayProgress) {
+          replayProgress.value = String(Math.round(frame.progress * 1000));
+          replayProgress.setAttribute("aria-valuetext", formatClock(date));
+        }
+        const playbackLabel = frame.playing ? "Pause" : "Play";
+        if (replayPlayback && replayPlayback.textContent !== playbackLabel) replayPlayback.textContent = playbackLabel;
+        replayFollow?.setAttribute("aria-pressed", String(frame.following));
+        setText("[data-sat-replay-phase]", frame.phase);
+        setText("[data-sat-replay-altitude]", `${Math.round(frame.altitudeKm)} km up`);
+      }
     },
     onPick(lat, lon) {
       const spot: Focus = { lat, lon, label: coordinates(lat, lon) };
@@ -162,9 +181,9 @@ function main(): void {
     onHover: (pass, x, y) => hint(pass && `${pass.name} · ${formatWhen(pass.time)}`, x, y),
   });
   const gallery = new Gallery(pictures, {
-    onOpen: (shot) => focus && openScene(shot.scene, focus),
-    onReplay: (shot) => {
-      select(shot);
+    onOpen: (scene) => focus && openScene(scene, focus),
+    onReplay: (pass, selectPhoto) => {
+      select(pass, selectPhoto);
       canvas.scrollIntoView({ block: "nearest", behavior: "smooth" });
     },
   });
@@ -186,11 +205,12 @@ function main(): void {
 
   // --------------------------------------------------------- one pass --
 
-  const select = (pass: MatchedPass | null) => {
+  const select = (pass: MatchedPass | null, selectPhoto = true) => {
     selected = pass;
+    replayCapture.set(pass, focus);
     globe.showPass(pass);
     timeline.select(pass?.id ?? null);
-    if (pass) gallery.show(pass);
+    if (pass && selectPhoto) gallery.show(pass);
     for (const item of document.querySelectorAll<HTMLElement>("[data-pass-id]")) {
       item.classList.toggle("is-active", item.dataset.passId === pass?.id);
     }
@@ -199,7 +219,6 @@ function main(): void {
     setText("[data-sat-pass-name]", pass.name);
     setText("[data-sat-pass-label]", `${LABEL_COPY[pass.label]} · ${KIND_COPY[pass.kind]}`);
     setText("[data-sat-pass-when]", `${formatWhen(pass.time)} · ${formatAway(pass.time)}`);
-    setText("[data-sat-pass-height]", `${Math.round(pass.altitudeKm)} km up`);
     setText(
       "[data-sat-pass-near]",
       `${Math.round(pass.angleDeg * KM_PER_DEGREE)} km from straight overhead`,
@@ -212,6 +231,10 @@ function main(): void {
     if (selected?.scene && focus) openScene(selected.scene, focus);
   });
   $("[data-sat-pass-replay]")?.addEventListener("click", () => globe.replayPass());
+  replayProgress?.addEventListener("input", () => globe.seekReplay(Number(replayProgress.value) / 1000));
+  replayPlayback?.addEventListener("click", () => globe.toggleReplayPlayback());
+  $("[data-sat-replay-closest]")?.addEventListener("click", () => globe.seekClosestApproach());
+  replayFollow?.addEventListener("click", () => globe.toggleReplayFollow());
   $("[data-sat-pass-now]")?.addEventListener("click", () => select(null));
 
   const passItem = (pass: MatchedPass): HTMLLIElement => {
@@ -310,7 +333,9 @@ function main(): void {
 
     report.hidden = false;
     setText("[data-sat-where]", place.label);
-    setText("[data-sat-headline]", "");
+    for (const button of document.querySelectorAll<HTMLButtonElement>("[data-sat-pick]")) {
+      button.setAttribute("aria-pressed", String(button.dataset.satPick === place.id));
+    }
     setText("[data-sat-summary]", "");
     busy("Looking up orbits…");
     matched = [];
@@ -337,33 +362,28 @@ function main(): void {
       }
       const records = catalog.search;
 
-      const [passes, scenes] = await Promise.all([
+      const [passes, archive] = await Promise.all([
         findPasses(records, place.lat, place.lon, {
           window: span,
           signal,
           onProgress: (done, total) => busy("Checking a week of orbits…", done / total),
         }),
         // Without the archive there are still the passes.
-        searchScenes(place.lat, place.lon, { signal }).catch(() => null),
+        searchWeekOfScenes(place.lat, place.lon, signal).catch(() => null),
       ]);
       if (signal.aborted) return;
 
-      matched = matchPasses(passes, scenes ?? [], records);
+      matched = matchPasses(passes, archive?.scenes ?? [], records);
       addDaily(matched, place.lat, place.lon);
       const past = matched.filter((pass) => !pass.upcoming);
-      const photos = matched.filter((pass) => pass.scene).length;
+      const photos = gallery.set(matched, place, archive?.scenes, archive?.clearLook);
       const upcoming = matched.length - past.length;
       const satellites = new Set(past.map((pass) => pass.noradId)).size;
       busy("");
       setText(
-        "[data-sat-headline]",
-        `In the last 7 days, ${satellites} satellites passed over ${place.label}.`,
-      );
-      setText(
         "[data-sat-summary]",
-        `${photos} of their pictures of it are public` +
-          (scenes ? "" : " (the Sentinel and Landsat archive could not be reached)") +
-          (upcoming ? `, and ${upcoming} more passes come in the next 2 days.` : "."),
+        `${satellites} satellites in the past 7 days · ${photos} public images · ${upcoming} upcoming passes.` +
+          (archive ? "" : " The detailed imagery archive is temporarily unavailable."),
       );
       for (const label of ROWS) {
         setText(
@@ -371,7 +391,6 @@ function main(): void {
           String(past.filter((pass) => pass.label === label).length),
         );
       }
-      gallery.set(matched, place);
 
       const always = watchers(records, place.lat, place.lon).map((profile) => profile.name);
       setText(
@@ -442,6 +461,19 @@ function main(): void {
   }
   const day = $<HTMLInputElement>("[data-sat-day]");
   day?.addEventListener("change", () => globe.setDayPicture(day.checked));
+
+  // Keep the fixed header readable over the report on a narrow screen.
+  const globePanel = $(".sat__globe");
+  const header = document.querySelector(".site-header");
+  const panel = $(".sat__panel");
+  const updateHeader = () => {
+    if (!globePanel || !header || header.classList.contains("is-menu")) return;
+    const solid = Boolean(panel?.scrollTop) || globePanel.getBoundingClientRect().bottom <= header.clientHeight;
+    header.classList.toggle("is-solid", solid);
+  };
+  window.addEventListener("scroll", updateHeader, { passive: true });
+  panel?.addEventListener("scroll", updateHeader, { passive: true });
+  updateHeader();
 
   const start = focusFromUrl();
   if (start) void run(start);

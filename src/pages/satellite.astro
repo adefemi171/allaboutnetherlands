@@ -25,7 +25,7 @@ const rows = [
 ];
 const tabs = [
   ["all", "All"],
-  ["detail", "Detailed"],
+  ["detail", "Detail"],
   ["weather", "Weather"],
 ];
 const legend = [
@@ -50,75 +50,90 @@ const legend = [
 >
   <main id="main" class="sat">
     <div class="sat__stage">
-    <div class="sat__globe">
-      <canvas
-        data-sat-canvas
-        tabindex="0"
-        role="application"
-        aria-label="The Earth with the satellites around it. Arrow keys turn it, plus and minus zoom. Press a spot to see who watched it."
-      ></canvas>
+      <div class="sat__viewport">
+        <div class="sat__globe">
+          <canvas
+            data-sat-canvas
+            tabindex="0"
+            role="application"
+            aria-label="The Earth with the satellites around it. Arrow keys turn it, plus and minus zoom. Press a spot to see who watched it."
+          ></canvas>
 
-      <p class="sat__clock mono" data-sat-clock></p>
+          <p class="sat__clock mono" data-sat-clock></p>
 
-      <article class="sat__pass sat__card" data-sat-pass hidden>
-        <p class="mono" data-sat-pass-label></p>
-        <h2 data-sat-pass-name></h2>
-        <dl>
-          <div><dt class="mono">Closest</dt><dd data-sat-pass-when></dd></div>
-          <div><dt class="mono">Height</dt><dd data-sat-pass-height></dd></div>
-          <div><dt class="mono">Passed</dt><dd data-sat-pass-near></dd></div>
-        </dl>
-        <p class="sat__actions">
-          <button type="button" class="is-main" data-sat-pass-photo>See the photo</button>
-          <button type="button" data-sat-pass-replay>Replay</button>
-          <button type="button" data-sat-pass-now>Back to now</button>
-        </p>
-      </article>
+          <figure class="sat__capture" data-sat-replay-capture hidden>
+            <canvas role="img"></canvas>
+            <figcaption></figcaption>
+          </figure>
 
-      <div class="sat__tools">
-        <ul class="sat__legend" aria-label="What the dots are">
-          {legend.map(([kind, label]) => <li class={`sat__dot sat__dot--${kind}`}>{label}</li>)}
-        </ul>
-        <label class="sat__day">
-          <input type="checkbox" data-sat-day checked />
-          <span>Clouds of the day</span>
-        </label>
-        <div class="sat__zoom" role="group" aria-label="Zoom">
-          <button type="button" data-sat-zoom="in" aria-label="Zoom in">
-            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
-          </button>
-          <button type="button" data-sat-zoom="out" aria-label="Zoom out">
-            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
-          </button>
+          <div class="sat__tools">
+            <ul class="sat__legend" aria-label="What the dots are">
+              {legend.map(([kind, label]) => <li class={`sat__dot sat__dot--${kind}`}>{label}</li>)}
+            </ul>
+            <label class="sat__day">
+              <input type="checkbox" data-sat-day checked aria-label="Show today’s clouds on the globe" />
+              <span>Clouds of the day</span>
+            </label>
+            <div class="sat__zoom" role="group" aria-label="Zoom">
+              <button type="button" data-sat-zoom="in" aria-label="Zoom in">
+                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
+              </button>
+              <button type="button" data-sat-zoom="out" aria-label="Zoom out">
+                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <p class="sat__tip mono" data-sat-tip hidden></p>
         </div>
+        <article class="sat__pass sat__card" data-sat-pass hidden>
+          <p class="mono" data-sat-pass-label></p>
+          <h2 data-sat-pass-name></h2>
+          <dl>
+            <div><dt class="mono">Closest</dt><dd data-sat-pass-when></dd></div>
+            <div><dt class="mono">Passed</dt><dd data-sat-pass-near></dd></div>
+          </dl>
+          <div class="sat__replay" data-sat-replay hidden>
+            <p class="sat__replay-status">
+              <strong data-sat-replay-phase></strong>
+              <span data-sat-replay-altitude></span>
+            </p>
+            <input class="sat__replay-scrubber" type="range" min="0" max="1000" value="0" data-sat-replay-progress aria-label="Replay time" />
+            <div class="sat__replay-controls">
+              <button type="button" data-sat-replay-playback>Pause</button>
+              <button type="button" data-sat-replay-closest>Closest approach</button>
+              <button type="button" data-sat-replay-follow aria-pressed="false">Follow spacecraft</button>
+            </div>
+            <p class="sat__replay-scale">Illustrated spacecraft, enlarged for visibility</p>
+          </div>
+          <p class="sat__actions">
+            <button type="button" class="is-main" data-sat-pass-photo>See the photo</button>
+            <button type="button" data-sat-pass-replay>Restart</button>
+            <button type="button" data-sat-pass-now>Back to now</button>
+          </p>
+        </article>
       </div>
 
-      <p class="sat__tip mono" data-sat-tip hidden></p>
-    </div>
-
-    <section class="sat__timeline" data-sat-block="timeline" aria-label="The week on a timeline" hidden>
-      <ul class="sat__rows mono">
-        {
-          rows.map(([label, name]) => (
-            <li class={`sat__row sat__row--${label}`}>
-              {name} <span data-sat-count={label}></span>
-            </li>
-          ))
-        }
-      </ul>
-      <!-- The same passes are in the lists, for those who cannot use this. -->
-      <canvas data-sat-timeline-canvas aria-hidden="true"></canvas>
-    </section>
+      <section class="sat__timeline" data-sat-block="timeline" aria-label="The week on a timeline" hidden>
+        <ul class="sat__rows mono">
+          {
+            rows.map(([label, name]) => (
+              <li class={`sat__row sat__row--${label}`}>
+                {name} <span data-sat-count={label}></span>
+              </li>
+            ))
+          }
+        </ul>
+        <!-- The same passes are in the lists, for those who cannot use this. -->
+        <canvas data-sat-timeline-canvas aria-hidden="true"></canvas>
+      </section>
     </div>
 
     <div class="sat__panel">
       <header class="sat__intro">
-        <p class="mono">Satellite</p>
-        <h1>Who watched here this week</h1>
+        <h1>Satellite explorer</h1>
         <p class="sat__lede">
-          Pick a place, look up a street, or press a spot on the globe. We
-          replay public orbits over the last seven days, list every pass that
-          could see it, and show the pictures that were made public.
+          Search for a place or pick one on the globe to see imagery and satellite passes.
         </p>
       </header>
 
@@ -139,15 +154,15 @@ const legend = [
       </div>
 
       <section class="sat__report sat__card" data-sat-report hidden>
-        <p class="mono" data-sat-where></p>
+        <h2 data-sat-where></h2>
         <p class="mono" data-sat-status role="status">Looking up orbits…</p>
         <progress class="sat__progress" data-sat-progress max="1" value="0"></progress>
-        <h2 data-sat-headline></h2>
         <p class="sat__summary" data-sat-summary></p>
 
         <div class="sat__gallery" data-sat-gallery hidden>
+          <h3 class="sat__gallery-title">Satellite imagery</h3>
           <div class="sat__gallery-bar">
-            <div class="sat__tabs" role="group" aria-label="Which pictures to show">
+            <div class="sat__tabs" role="group" aria-label="Image type">
               {
                 tabs.map(([tab, label]) => (
                   <button type="button" data-gallery-tab={tab} aria-pressed="false">
@@ -170,7 +185,9 @@ const legend = [
               <img data-gallery-img alt="" referrerpolicy="no-referrer" decoding="async" hidden />
               <span class="sat__pin" data-gallery-pin hidden></span>
             </span>
+            <span class="sat__picture-message" data-gallery-placeholder hidden></span>
             <span class="sat__tag mono" data-gallery-tag></span>
+            <span class="sat__picture-action" aria-hidden="true">View larger ↗</span>
           </button>
           <div class="sat__caption">
             <p>
@@ -234,7 +251,7 @@ const legend = [
     /* The header lies over the top of the page: the globe runs under it. */
     min-height: 100dvh;
     display: grid;
-    grid-template-columns: minmax(18rem, 24rem) 1fr;
+    grid-template-columns: minmax(22rem, min(37vw, 38rem)) minmax(0, 1fr);
     gap: 0;
     background: var(--ink-900);
     color: var(--text);
@@ -246,6 +263,13 @@ const legend = [
     flex-direction: column;
     height: 100dvh;
     min-width: 0;
+  }
+  .sat__viewport {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
   }
   .sat__globe {
     flex: 1;
@@ -280,8 +304,8 @@ const legend = [
   }
 
   .sat__intro h1 {
-    margin-top: 0.35rem;
-    font-size: clamp(1.55rem, 2.4vw, 2rem);
+    margin-top: 0;
+    font-size: clamp(1.8rem, 3vw, 2.65rem);
     line-height: 1.15;
   }
   .sat__lede {
@@ -318,7 +342,8 @@ const legend = [
     font-weight: 600;
     cursor: pointer;
   }
-  .sat__picks button:hover {
+  .sat__picks button:hover,
+  .sat__picks button[aria-pressed="true"] {
     border-color: var(--signal);
     color: var(--signal);
   }
@@ -330,8 +355,8 @@ const legend = [
     background: color-mix(in srgb, var(--ink-900) 55%, transparent);
   }
   .sat__report h2 {
-    margin-top: 0.5rem;
-    font-size: 1.3rem;
+    margin: 0;
+    font-size: clamp(1.4rem, 2vw, 1.9rem);
     line-height: 1.25;
   }
   .sat__report h2:empty,
@@ -346,10 +371,30 @@ const legend = [
   .sat__gallery[hidden] {
     display: none;
   }
+  .sat .sat__gallery-title {
+    margin: 0 0 0.65rem;
+    font-size: 1rem;
+  }
+  .sat__picture-message {
+    position: absolute;
+    inset: 50% 0 auto;
+    translate: 0 -50%;
+    padding: 1rem;
+    font-size: 0.9rem;
+  }
+  .sat__gallery-bar button:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+  .sat__picture:focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 3px;
+  }
   .sat__gallery-bar {
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    flex-wrap: wrap;
     margin-bottom: 0.5rem;
   }
   .sat__gallery-bar p {
@@ -391,8 +436,8 @@ const legend = [
     overflow: hidden;
     padding: 0;
     border: 0;
-    border-radius: 4px;
-    background: #0a0c0f;
+    border-radius: 10px;
+    background: radial-gradient(ellipse at 50% 25%, var(--ink-700), var(--ink-900));
     color: var(--muted);
     cursor: zoom-in;
   }
@@ -432,6 +477,22 @@ const legend = [
     border-radius: 3px;
     background: rgb(8 12 16 / 0.8);
     color: #e9e5db;
+  }
+  .sat__picture-action {
+    position: absolute;
+    right: 0.55rem;
+    bottom: 0.55rem;
+    padding: 0.4rem 0.65rem;
+    border-radius: 5px;
+    background: rgb(8 12 16 / 0.9);
+    color: #e9e5db;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  .sat__picture:hover .sat__picture-action,
+  .sat__picture:focus-visible .sat__picture-action {
+    background: var(--signal);
+    color: var(--signal-ink);
   }
   .sat__caption {
     display: flex;
@@ -606,13 +667,34 @@ const legend = [
     display: none;
   }
   .sat__pass {
-    position: absolute;
-    left: 1.1rem;
-    bottom: 1.1rem;
-    width: min(21rem, calc(100% - 2.2rem));
-    background: color-mix(in srgb, var(--ink-800) 90%, transparent);
-    backdrop-filter: blur(12px);
-    box-shadow: 0 16px 40px rgb(0 0 0 / 0.3);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "label replay"
+      "name replay"
+      "detail actions";
+    gap: 0.25rem 1.25rem;
+    border-inline: 0;
+    border-radius: 0;
+    background: var(--ink-800);
+  }
+  .sat__pass[hidden] {
+    display: none;
+  }
+  .sat__pass > p:first-child {
+    grid-area: label;
+  }
+  .sat__pass h2 {
+    grid-area: name;
+  }
+  .sat__pass dl {
+    grid-area: detail;
+  }
+  .sat__pass .sat__replay {
+    grid-area: replay;
+  }
+  .sat__pass .sat__actions {
+    grid-area: actions;
   }
   .sat__pass h2 {
     margin-top: 0.3rem;
@@ -620,19 +702,74 @@ const legend = [
   }
   .sat__pass dl {
     display: grid;
-    gap: 0.45rem;
-    margin: 0.8rem 0 0;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+    margin: 0.3rem 0 0;
   }
   .sat__pass dd {
     margin: 0.1rem 0 0;
     font-size: 0.93rem;
     font-weight: 600;
   }
+  .sat__replay {
+    align-self: center;
+  }
+  .sat__replay[hidden] {
+    display: none;
+  }
+  .sat__replay-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+  }
+  .sat__replay-status strong {
+    color: #b5efff;
+  }
+  .sat__replay-status span,
+  .sat__replay-scale {
+    color: var(--muted);
+  }
+  .sat__replay-scale {
+    margin-top: 0.25rem;
+    font-size: 0.68rem;
+  }
+  .sat__replay-scrubber {
+    display: block;
+    width: 100%;
+    height: 1.5rem;
+    margin: 0.25rem 0 0;
+    accent-color: #b5efff;
+    cursor: ew-resize;
+  }
+  .sat__replay-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .sat__replay-controls button {
+    min-height: 2.25rem;
+    padding: 0.25rem 0.55rem;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+  .sat__replay-controls button:hover,
+  .sat__replay-controls button[aria-pressed="true"] {
+    border-color: #b5efff;
+    color: #b5efff;
+  }
   .sat__actions {
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
-    margin-top: 0.9rem;
+    align-self: end;
+    margin-top: 0.3rem;
   }
   .sat__actions button,
   .sat__zoom button {
@@ -652,6 +789,36 @@ const legend = [
   .sat__actions .is-main {
     background: var(--signal);
     color: var(--signal-ink);
+  }
+  .sat__capture {
+    position: absolute;
+    z-index: 1;
+    top: calc(var(--header-offset) + 0.6rem);
+    right: 1.1rem;
+    width: clamp(7rem, 23%, 13rem);
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--ink-900);
+    pointer-events: none;
+  }
+  .sat__capture[hidden] {
+    display: none;
+  }
+  .sat__globe .sat__capture canvas {
+    position: static;
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+  .sat__capture figcaption {
+    padding: 0.3rem 0.45rem;
+    color: var(--text);
+    font-size: 0.7rem;
+    line-height: 1.25;
   }
   .sat__tools {
     position: absolute;
@@ -818,7 +985,7 @@ const legend = [
     }
     .sat__globe {
       flex: none;
-      height: min(50dvh, 28rem);
+      height: clamp(15rem, 36dvh, 23rem);
     }
     .sat__timeline {
       grid-template-columns: 1fr;
@@ -839,10 +1006,17 @@ const legend = [
       display: none;
     }
     .sat__pass {
-      left: 0.6rem;
-      bottom: 0.6rem;
-      width: calc(100% - 4.4rem);
-      padding: 0.7rem 0.8rem;
+      display: block;
+      border-inline: 1px solid var(--line);
+      border-radius: 6px;
+      margin: 0.55rem 0.65rem;
+      padding: 0.75rem 0.9rem;
+    }
+    .sat__pass .sat__replay {
+      margin-top: 0.55rem;
+    }
+    .sat__pass .sat__actions {
+      margin-top: 0.65rem;
     }
     .sat__pass dl {
       display: none;
