@@ -1,6 +1,14 @@
 import { appendFile, mkdir } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { defineConfig } from "astro/config";
 import { loadEnv } from "vite";
+import { driveRooms } from "./scripts/drive-rooms.mjs";
+import { driveAreas, roadDataPath } from "./scripts/drive-area.mjs";
+
+const driveBounds = Object.fromEntries(driveAreas.filter(({ modes }) => modes.includes("car")).map(({ id }) => {
+  const file = new URL(`./${roadDataPath(id)}/corridor.json`, import.meta.url);
+  return [id, JSON.parse(readFileSync(file, "utf8")).bounds];
+}));
 
 // Set POLL=1 where file watching does not work (containers, network drives,
 // sandboxes). The dev server then checks files for changes on a timer.
@@ -91,7 +99,7 @@ export default defineConfig({
   compressHTML: false,
   integrations: [formCheck()],
   vite: {
-    plugins: [formInbox()],
+    plugins: [formInbox(), driveRooms(driveBounds)],
     // The workers are modules (satellite.js needs that to build).
     worker: { format: "es" },
     server: {

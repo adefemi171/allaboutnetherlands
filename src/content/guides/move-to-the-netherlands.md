@@ -46,6 +46,8 @@ needsCheck:
 
 This checklist is for anyone moving to the Netherlands for more than 4 months, to work, study or join a partner. It puts the steps in the order that works, because several of them depend on the one before. Each step links to a guide with the details.
 
+Coming from Nigeria or elsewhere in West Africa? The regional guide covers document legalisation, inviting family and the Naija @ Netherlands community directory. [Moving from Nigeria or West Africa](/guides/moving-from-nigeria-or-west-africa/)
+
 ## Before you leave
 
 1. **Check whether you need a residence permit.** EU, EEA and Swiss citizens do not need one. Everyone else does, and for most people the application starts before they travel. See [Residence permits](/guides/residence-permits/).

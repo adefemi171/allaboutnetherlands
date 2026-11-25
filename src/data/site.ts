@@ -32,6 +32,7 @@ export const nav = [
   { href: "/guides/", label: "Guides" },
   { href: "/map/", label: "Map" },
   { href: "/satellite/", label: "Satellite" },
+  { href: "/drive/", label: "Drive & Ride" },
   { href: "/about/", label: "About" },
 ];
 

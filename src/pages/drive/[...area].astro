@@ -1,0 +1,565 @@
+---
+import Base from "../../layouts/Base.astro";
+import { getCollection } from "astro:content";
+import { CAR_PAINTS, DRIVE_AREAS, drivePath, type DriveArea } from "../../drive/data";
+import { SKIN_TONES } from "../../drive/avatar";
+
+export function getStaticPaths() {
+  return DRIVE_AREAS.map((area) => ({
+    params: { area: area.id === "utrecht" ? undefined : area.id },
+    props: { area },
+  }));
+}
+
+const { area } = Astro.props as { area: DriveArea };
+const { stops, modes } = area;
+const hasTrain = modes.includes("train");
+const modeLabels = { car: "Car", bike: "Bike", walk: "Walk", train: "Train" };
+// Passengers can read the site's guides on the train.
+const guides = (await getCollection("guides")).toSorted((a, b) => a.data.order - b.data.order)
+  .map(({ id, data }) => ({ id, title: data.title }));
+const description = `Explore ${area.name} on mapped streets and paths in the Drive & Ride 3D simulation.`;
+---
+
+<Base title={area.id === "utrecht" ? "Drive & Ride" : `Drive & Ride · ${area.name}`} description={description} scene footer={false}>
+  <main id="main" class="drive" data-drive={area.id}>
+    <header class="drive-heading">
+      <div>
+        <h1>Drive <span>&amp;</span> Ride</h1>
+        <p>{stops[0]} to {stops.at(-1)}</p>
+      </div>
+      <a href="/map/">Explore the Netherlands map <span aria-hidden="true">↗</span></a>
+    </header>
+    <nav class="area-picker" aria-label="Simulation areas">
+      {DRIVE_AREAS.map((option) => (
+        <a href={drivePath(option)} aria-current={option.id === area.id ? "page" : undefined}>{option.name}</a>
+      ))}
+    </nav>
+
+    <div class="drive-grid">
+      <div class="drive-stage">
+        <section class="viewport" data-viewport aria-label="3D simulation" tabindex="0" aria-describedby="drive-controls">
+          <div class="speedometer" aria-hidden="true">
+            <strong data-speed>0</strong>
+            <span>km/h</span>
+          </div>
+          <p class="road-alert" data-road-alert hidden></p>
+          <p class="start-hint" data-start-hint hidden></p>
+          {hasTrain && (
+            <section class="reader" data-reader aria-label="Reading on the train" hidden>
+              <label class="reader-pick">
+                <span>Reading</span>
+                <select data-reader-guide>
+                  {guides.map(({ id, title }) => <option value={id}>{title}</option>)}
+                </select>
+              </label>
+              <div class="reader-page" data-reader-page tabindex="0"></div>
+            </section>
+          )}
+          <div class="camera">
+            <button type="button" data-camera aria-pressed="false" disabled>Close camera</button>
+            <time class="local-time" data-local-time title="Local time in the Netherlands" hidden></time>
+          </div>
+          <div class="load-panel" data-load role="status">
+            <span class="loading-mark" data-spinner></span>
+            <strong data-load-title>Loading the corridor</strong>
+            <span data-load-detail>Preparing the streets, cycle paths and railway.</span>
+            <button type="button" data-reload hidden>Reload pilot</button>
+          </div>
+          <div class="viewport-footer">
+            <span data-viewport-status>{stops[0]}</span>
+            <a href="https://docs.3dbag.nl/en/copyright/">© 3DBAG by tudelft3d and 3DGI</a>
+          </div>
+        </section>
+        <div class="drive-dock" data-drive-dock hidden>
+          <p id="drive-controls" class="drive-keys"><strong>WASD</strong> or <strong>arrow keys</strong> to move · Hold <strong>↑ + ←/→</strong> to turn · <strong>Space</strong> to brake</p>
+          <div class="drive-pad" aria-label="Driving controls" role="group">
+            <button type="button" data-input="left" aria-label="Steer left" aria-keyshortcuts="A ArrowLeft"><span aria-hidden="true">←</span> Left</button>
+            <button type="button" data-input="right" aria-label="Steer right" aria-keyshortcuts="D ArrowRight"><span aria-hidden="true">→</span> Right</button>
+            <button type="button" data-input="reverse" aria-keyshortcuts="S ArrowDown"><span aria-hidden="true">↓</span> <span data-reverse-label>Reverse</span></button>
+            <button type="button" data-input="brake" aria-keyshortcuts="Space">Brake</button>
+            <button type="button" data-input="throttle" aria-keyshortcuts="W ArrowUp"><span aria-hidden="true">↑</span> <span data-forward-label>Accelerate</span></button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="pilot-panel" aria-label="Pilot controls">
+        <div class="mode-picker" role="group" aria-label="Travel mode">
+          {modes.map((mode, i) => (
+            <button type="button" data-mode={mode} aria-pressed={i === 0} disabled>{modeLabels[mode]}</button>
+          ))}
+        </div>
+
+        <div class="train-controls" data-train-seats hidden>
+          <div class="choice-row" role="group" aria-label="Seat">
+            <span>Seat</span>
+            <button type="button" data-train-seat="left" aria-pressed="true">Left</button>
+            <button type="button" data-train-seat="right" aria-pressed="false">Right</button>
+          </div>
+          <div class="choice-row" role="group" aria-label="View">
+            <span>View</span>
+            <button type="button" data-train-view="window" aria-pressed="true">Window</button>
+            <button type="button" data-train-view="you" aria-pressed="false">You</button>
+            <button type="button" data-train-view="outside" aria-pressed="false">Outside</button>
+          </div>
+          <div class="activities" role="group" aria-label="On the train">
+            <button type="button" data-train-activity="look" aria-pressed="true">Look out</button>
+            <button type="button" data-train-activity="read" aria-pressed="false">Read</button>
+            <button type="button" data-train-activity="music" aria-pressed="false">Music</button>
+            <button type="button" data-train-activity="quiet" aria-pressed="false">Quiet</button>
+          </div>
+          <button type="button" class="sound-toggle" data-train-sound aria-pressed="true">Sound on</button>
+        </div>
+
+        <section class="you-picker" aria-labelledby="you-label">
+          <div class="car-paint-label">
+            <h2 id="you-label">You</h2>
+            <span data-you-name></span>
+          </div>
+          <div class="you-options">
+            <div class="choice-row" role="group" aria-label="Body">
+              <button type="button" data-you-body="woman" aria-pressed="true">Woman</button>
+              <button type="button" data-you-body="man" aria-pressed="false">Man</button>
+            </div>
+            <div class="skin-options" role="group" aria-label="Skin tone">
+              {SKIN_TONES.map(({ name, color }) => (
+                <button type="button" data-you-skin={color} style={`--paint:${color}`} aria-label={`${name} skin`}
+                  title={name} aria-pressed="false"></button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section class="car-paint" aria-labelledby="car-paint-label" data-car-paint hidden>
+          <div class="car-paint-label">
+            <h2 id="car-paint-label">Car paint</h2>
+            <span data-paint-name>{CAR_PAINTS[0].name}</span>
+          </div>
+          <div class="paint-options">
+            {CAR_PAINTS.map(({ name, color }, i) => (
+              <button type="button" data-paint={color} style={`--paint:${color}`}
+                aria-label={name} title={name} aria-pressed={i === 0}></button>
+            ))}
+            <label class="custom-paint">
+              <span>Custom</span>
+              <input type="color" aria-label="Custom car paint" value={CAR_PAINTS[0].color} data-custom-paint />
+            </label>
+          </div>
+        </section>
+
+        <div class="map-wrap">
+          <canvas data-minimap aria-hidden="true" width="340" height="190"></canvas>
+          <span class="map-north" aria-hidden="true">N ↑</span>
+          <span class="map-distance" data-route-distance></span>
+        </div>
+
+        <div class="local-place" data-place-card hidden>
+          <strong data-place-name></strong>
+          <p data-place-detail></p>
+        </div>
+
+        <ol class="station-list" aria-label={hasTrain ? "Stations" : "Starting points"}>
+          {stops.map((stop, index) => (
+            <li data-station={index}>
+              <button type="button" data-start={index} aria-label={`Start at ${stop}`} disabled>
+                <span class="station-dot" aria-hidden="true"></span>
+                <span>{stop}</span>
+                <span class="station-indicator" data-station-indicator></span>
+              </button>
+            </li>
+          ))}
+        </ol>
+
+        <div class="journey-status">
+          <p data-status role="status">Starting near {stops[0]}.</p>
+          <button type="button" data-action hidden={!hasTrain} disabled>Board train</button>
+        </div>
+
+        <section class="room-panel" aria-labelledby="room-title" hidden={!modes.includes("car")}>
+          <h2 id="room-title">Drive together</h2>
+          <form data-room-form>
+            <label for="drive-room" class="drive-visually-hidden">Room code</label>
+            <input id="drive-room" data-room-code type="text" minlength="3" maxlength="32" pattern="[a-z0-9-]{3,32}"
+              placeholder="Room code (optional)" autocomplete="off" autocapitalize="off" spellcheck="false" />
+            <button type="submit" data-room-join disabled>Join room</button>
+          </form>
+          <p data-room-status role="status">AI traffic is on. Join a room to see other players.</p>
+          <div class="room-actions" data-room-actions hidden>
+            <button type="button" data-room-copy>Copy invite</button>
+            <button type="button" data-room-leave>Leave room</button>
+          </div>
+          <input type="url" data-room-link aria-label="Room invite link" readonly hidden />
+        </section>
+      </aside>
+    </div>
+    <p class="drive-credit">
+      {hasTrain ? "Simulated shuttle. Select a station to start there." : "Select a starting point to explore the area."}
+      Map data © <a href="https://www.kadaster.nl/zakelijk/registraties/basisregistraties/top10nl">Kadaster TOP10NL</a>
+      and <a href="https://www.pdok.nl/introductie/-/article/pdok-luchtfoto-rgb-open-">aerial imagery © Beeldmateriaal / PDOK</a>.
+      <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Footways from <a href="https://api.pdok.nl/kadaster/bgt/ogc/v1/collections/wegdeel">Kadaster BGT</a>.
+      Signs from <a href="https://docs.ndw.nu/producten/verkeersborden/">NDW</a>.
+      Zebra crossings © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> (ODbL).
+      Signals use simulated timing. Locations from <a href="https://api.pdok.nl/kadaster/bgt/ogc/v1/collections/paal">Kadaster BGT</a>,
+      <a href="https://maps.amsterdam.nl/verkeerslichten/">Amsterdam</a> and
+      <a href="https://open.utrecht.nl/dataset/tellingen-verkeerslichten-2014/d3b15bd0-cce4-4981-91f8-1cb6cfb9d207">Utrecht</a>.
+      Driving directions from <a href="https://www.pdok.nl/introductie/-/article/nationaal-wegen-bestand-nwb-wegen">Rijkswaterstaat NWB</a>.
+      Geometry and markings adapted for the simulation.
+    </p>
+  </main>
+  <script>
+    import { startDrive } from "../../drive/client";
+    const root = document.querySelector<HTMLElement>("[data-drive]");
+    if (root) void startDrive(root);
+  </script>
+</Base>
+
+<style>
+  .drive {
+    --panel: #152932;
+    --inset: #10232c;
+    --edge: #35505a;
+    --muted: #aec1c6;
+    --ink: #f1f5f2;
+    --mint: #96e7cd;
+    width: min(calc(100% - 48px), 1440px);
+    margin: 0 auto;
+    padding: 5.65rem 0 1rem;
+    color: var(--ink);
+  }
+  .drive [hidden] { display: none !important; }
+  .drive-heading {
+    display: flex;
+    gap: 1.1rem;
+    align-items: end;
+    justify-content: space-between;
+    margin: 0 0 1rem;
+  }
+  .drive-heading h1 {
+    font-size: clamp(2.45rem, 4.8vw, 4.2rem);
+    line-height: .96;
+    letter-spacing: -.06em;
+    margin: 0 0 .42rem;
+  }
+  .drive-heading h1 span { color: var(--mint); }
+  .drive-heading p { color: var(--muted); margin: 0; font-size: 1.05rem; }
+  .drive-heading a { color: var(--mint); font-size: .86rem; text-decoration: none; white-space: nowrap; }
+  .drive-heading a:hover, .drive-credit a:hover { text-decoration: underline; }
+  .area-picker { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .85rem; }
+  .area-picker a {
+    padding: .45rem .76rem;
+    border: 1px solid var(--edge);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: .84rem;
+    line-height: 1.25;
+    text-decoration: none;
+  }
+  .area-picker a:hover, .area-picker [aria-current] {
+    border-color: var(--mint);
+    color: var(--ink);
+    background: var(--inset);
+  }
+  .area-picker [aria-current] { color: var(--mint); }
+  .drive-grid { display: grid; grid-template-columns: minmax(0, 1fr) 312px; gap: 12px; align-items: stretch; }
+  .drive-stage { min-width: 0; }
+  .viewport {
+    position: relative;
+    isolation: isolate;
+    /* Leave room for the control dock below on laptop-height windows. */
+    min-height: clamp(340px, calc(100svh - 360px), 680px);
+    overflow: hidden;
+    background: #b6d2dd;
+    border-radius: 16px;
+    border: 1px solid var(--edge);
+  }
+  .viewport :global(canvas) { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .speedometer, .camera, .viewport-footer, .road-alert { position: absolute; z-index: 1; }
+  .speedometer {
+    top: 16px;
+    left: 16px;
+    padding: .5rem .8rem .28rem;
+    border: 1px solid #d7f3ed54;
+    background: #102831e8;
+    border-radius: 12px;
+    display: flex;
+    align-items: baseline;
+    gap: .4rem;
+  }
+  .speedometer strong { font-size: 2rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .speedometer span { font-size: .75rem; color: #c1d6d9; }
+  .camera { top: 16px; right: 16px; display: grid; justify-items: end; gap: .28rem; }
+  .local-time {
+    padding: .2rem .5rem;
+    border-radius: 6px;
+    background: #102831ec;
+    color: #c9dce0;
+    font-size: .72rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .road-alert {
+    top: 66px;
+    left: 16px;
+    margin: 0;
+    padding: .36rem .58rem;
+    color: #ffedc9;
+    background: #1a2730f5;
+    border: 1px solid #e3b16c;
+    border-radius: 7px;
+    font-size: .80rem;
+    font-weight: 680;
+    pointer-events: none;
+  }
+  .road-alert[data-kind="stop"], .road-alert[data-kind="no-entry"], .road-alert[data-kind="red"] { border-color: #ff8379; }
+  .road-alert[data-kind="green"] { border-color: #96e7cd; }
+  .start-hint {
+    position: absolute;
+    z-index: 1;
+    left: 50%;
+    bottom: 54px;
+    transform: translateX(-50%);
+    max-width: calc(100% - 32px);
+    margin: 0;
+    padding: .5rem .8rem;
+    border: 1px solid var(--mint);
+    border-radius: 9px;
+    background: #102831f0;
+    color: var(--ink);
+    font-size: .86rem;
+    text-align: center;
+    pointer-events: none;
+  }
+  .start-hint kbd { font: inherit; font-weight: 700; color: var(--mint); }
+  .drive button {
+    font: inherit;
+    font-weight: 660;
+    color: inherit;
+    cursor: pointer;
+    border: 1px solid var(--edge);
+    background: #203944;
+    border-radius: 9px;
+  }
+  .drive button:not(:disabled):hover { filter: brightness(1.16); }
+  .drive button:focus-visible, .viewport:focus-visible, .drive a:focus-visible {
+    outline: 2px solid #f4d672;
+    outline-offset: 3px;
+  }
+  .drive button:disabled { opacity: .42; cursor: default; }
+  .camera button { font-size: .84rem; padding: .46rem .68rem; background: #102831ec; }
+  .train-controls { display: grid; gap: .4rem; }
+  .choice-row { display: flex; align-items: center; gap: .32rem; }
+  .choice-row > span { width: 2.6rem; flex: none; font-size: .72rem; color: var(--muted); }
+  .choice-row button, .activities button { flex: 1; min-width: 0; padding: .44rem .24rem; font-size: .75rem; }
+  .activities { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .32rem; }
+  :is(.choice-row, .activities) button[aria-pressed="true"] { background: var(--mint); border-color: var(--mint); color: #142930; }
+  .sound-toggle { padding: .38rem; font-size: .72rem; background: transparent !important; }
+  .sound-toggle[aria-pressed="false"] { color: var(--muted); }
+  .you-picker { display: grid; gap: .36rem; }
+  .you-options { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .5rem; align-items: center; }
+  .skin-options { display: flex; gap: 5px; }
+  .skin-options button { width: 28px; height: 28px; border-radius: 50%; background: var(--paint); border-color: #cfe8e468; }
+  .skin-options button[aria-pressed="true"] { box-shadow: inset 0 0 0 1px #10232c, inset 0 0 0 3px #f1f5f2; }
+  .reader {
+    position: absolute;
+    z-index: 2;
+    top: 64px;
+    right: 16px;
+    bottom: 52px;
+    width: min(380px, 46%);
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: .5rem;
+    padding: .7rem .8rem .2rem;
+    border-radius: 12px;
+    background: #f6f1e4f2;
+    color: #22303a;
+    box-shadow: 0 10px 30px #0006;
+  }
+  .reader[data-side="left"] { right: auto; left: 16px; }
+  .reader-pick { display: grid; gap: .2rem; font-size: .7rem; color: #5b6870; }
+  .reader-pick select { font: inherit; font-size: .82rem; color: #22303a; padding: .3rem; border-radius: 6px; border: 1px solid #c9c2b0; background: #fffdf7; }
+  .reader-page { overflow-y: auto; font-size: .86rem; line-height: 1.55; padding: 0 .2rem .8rem 0; }
+  .reader-page :global(h2) { font-size: 1rem; margin: 1rem 0 .3rem; }
+  .reader-page :global(h3) { font-size: .9rem; margin: .8rem 0 .2rem; }
+  .reader-page :global(p), .reader-page :global(ul), .reader-page :global(ol) { margin: 0 0 .6rem; }
+  .reader-page :global(a) { color: #1d6b5c; }
+  .reader-page:focus-visible { outline: 2px solid #d39b2a; outline-offset: 2px; }
+  .viewport-footer {
+    bottom: 13px;
+    left: 16px;
+    right: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .viewport-footer :is(span, a) { background: #102831eb; border-radius: 6px; padding: .27rem .55rem; font-size: .76rem; }
+  .viewport-footer a { color: #e5f0ef; font-size: .62rem; text-decoration: none; pointer-events: auto; }
+  .viewport-footer a:hover { text-decoration: underline; }
+  .load-panel {
+    position: absolute;
+    z-index: 3;
+    inset: 0;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: .65rem;
+    padding: 2rem;
+    text-align: center;
+    background: #142930;
+  }
+  .load-panel strong { font-size: 1.4rem; }
+  .load-panel span { color: var(--muted); }
+  .load-panel button { padding: .55rem .85rem; }
+  .loading-mark {
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--edge);
+    border-top-color: var(--mint);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .pilot-panel {
+    display: flex;
+    flex-direction: column;
+    gap: .9rem;
+    min-width: 0;
+    padding: 14px;
+    background: var(--panel);
+    border: 1px solid var(--edge);
+    border-radius: 16px;
+  }
+  .mode-picker { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 5px; padding: 4px; background: var(--inset); border-radius: 10px; }
+  .mode-picker button { padding: .54rem .2rem; background: transparent; border-color: transparent; font-size: .88rem; }
+  .mode-picker button[aria-pressed="true"] { background: var(--mint); color: #10343b; }
+  .car-paint { display: grid; gap: .36rem; min-width: 0; }
+  .car-paint-label { display: flex; align-items: baseline; justify-content: space-between; gap: .55rem; }
+  .car-paint-label h2 { font-size: .86rem; margin: 0; }
+  .car-paint-label span { font-size: .73rem; color: var(--muted); }
+  .paint-options { display: grid; grid-template-columns: repeat(5, 1fr) minmax(45px, 1.32fr); gap: 6px; }
+  .paint-options button, .custom-paint { height: 36px; border-radius: 7px; min-width: 0; }
+  .paint-options button { background: var(--paint); border-color: #cfe8e468; }
+  .paint-options button[aria-pressed="true"] {
+    box-shadow: inset 0 0 0 1px #10232c, inset 0 0 0 3px #f1f5f2;
+  }
+  .custom-paint { position: relative; display: grid; place-items: center; border: 1px solid var(--edge); background: #203944; font-size: .67rem; font-weight: 660; cursor: pointer; }
+  .custom-paint input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+  .custom-paint:focus-within { outline: 2px solid #f4d672; outline-offset: 3px; }
+  .map-wrap { position: relative; overflow: hidden; height: 160px; background: #10262d; border-radius: 11px; border: 1px solid #314d52; }
+  .map-wrap canvas { width: 100%; height: 100%; display: block; }
+  .map-north, .map-distance { position: absolute; right: .66rem; font-family: "Overpass Mono Variable", monospace; font-size: .7rem; color: #c2d7d5; }
+  .map-north { top: .55rem; }
+  .map-distance { bottom: .45rem; }
+  .local-place { display: grid; gap: .22rem; padding: .5rem .58rem; border-left: 2px solid #d3ae79; background: var(--inset); border-radius: 0 6px 6px 0; }
+  .local-place strong { font-size: .83rem; font-weight: 680; }
+  .local-place p { margin: 0; font-size: .76rem; line-height: 1.36; color: var(--muted); }
+  .station-list { display: grid; gap: .12rem; margin: -.24rem 0 0; padding: 0; list-style: none; }
+  .station-list button {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 12px 1fr auto;
+    align-items: center;
+    gap: .49rem;
+    padding: .36rem .5rem;
+    text-align: left;
+    background: transparent;
+    border-color: transparent;
+    font-size: .84rem;
+  }
+  .station-list [aria-current] { background: #223d46; border-color: #385960; }
+  .station-dot { width: 8px; height: 8px; border-radius: 50%; border: 1px solid #8db8b8; }
+  [aria-current] .station-dot { background: var(--mint); border-color: var(--mint); }
+  .station-indicator { color: var(--muted); font-size: .71rem; white-space: nowrap; }
+  .journey-status { display: grid; gap: .52rem; }
+  .journey-status p { font-size: .82rem; color: var(--muted); margin: 0; line-height: 1.42; min-height: 2.36em; }
+  .journey-status button { padding: .6rem .55rem; background: #e9c772; color: #2c251c; border-color: #f2d58f; font-size: .86rem; }
+  .drive-dock {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+    padding: 9px 10px;
+    margin-top: 8px;
+    border: 1px solid var(--edge);
+    border-radius: 12px;
+    background: var(--panel);
+  }
+  .drive-keys { margin: 0; color: var(--muted); font-size: .77rem; }
+  .drive-keys strong { color: var(--ink); }
+  .drive-pad { display: flex; flex: 0 1 auto; gap: 5px; flex-wrap: wrap; }
+  .drive-pad button {
+    min-height: 42px;
+    min-width: 44px;
+    padding: .3rem .59rem;
+    font-size: .78rem;
+    background: var(--inset);
+    touch-action: none;
+    user-select: none;
+  }
+  .drive-pad button[data-held], .drive-pad button[data-input="throttle"] { background: var(--mint); color: #102831; }
+  .drive-pad button[data-held] { box-shadow: inset 0 0 0 2px #246452; }
+  .drive-pad button [aria-hidden] { margin-right: 2px; }
+  .room-panel { border-top: 1px solid var(--edge); margin-top: auto; padding-top: .75rem; display: grid; gap: .45rem; }
+  .drive-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .room-panel h2 { margin: 0; font-size: .88rem; }
+  .room-panel form, .room-actions { display: flex; gap: 5px; }
+  .room-panel input {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    padding: .4rem .48rem;
+    border: 1px solid var(--edge);
+    border-radius: 6px;
+    background: var(--inset);
+    color: var(--ink);
+    font: inherit;
+    font-size: .75rem;
+  }
+  .room-panel input:focus-visible { outline: 2px solid #f4d672; outline-offset: 2px; }
+  .room-panel button { padding: .38rem .55rem; white-space: nowrap; font-size: .74rem; }
+  .room-panel p { margin: 0; color: var(--muted); font-size: .73rem; min-height: 1.4em; }
+  .drive-credit { color: var(--muted); font-size: .73rem; line-height: 1.5; margin: .7rem 0 0; }
+  .drive-credit a { color: var(--mint); }
+  @media (max-width: 850px) {
+    .drive { width: calc(100% - 24px); padding-top: 4.85rem; }
+    .drive-grid { grid-template-columns: minmax(0, 1fr) 268px; gap: 8px; }
+    .pilot-panel { padding: 10px; }
+  }
+  @media (max-width: 670px) {
+    .drive-heading { align-items: start; flex-direction: column; gap: .35rem; margin-bottom: .8rem; }
+    .drive-heading a { display: none; }
+    .drive-grid { grid-template-columns: 1fr; }
+    .viewport { min-height: clamp(300px, 47svh, 480px); }
+    .pilot-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .mode-picker, .car-paint, .local-place, .journey-status, .room-panel { grid-column: 1 / -1; }
+    .map-wrap { height: 130px; }
+    .station-list button { grid-template-columns: 8px 1fr; }
+    .station-indicator { grid-column: 2; }
+    .speedometer { top: 10px; left: 10px; }
+    .road-alert { top: 59px; left: 10px; }
+    .camera { top: 10px; right: 10px; }
+    .viewport-footer { left: 10px; right: 10px; bottom: 9px; }
+    .drive-dock { padding: 8px; }
+    .reader { top: auto; left: 10px; right: 10px; bottom: 44px; width: auto; height: 62%; }
+    /* Steering under the left thumb, pedals under the right. */
+    .drive-pad {
+      display: grid;
+      width: 100%;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) 8px repeat(2, minmax(0, 1fr));
+      grid-template-areas: "left right . reverse throttle" "left right . brake throttle";
+      gap: 6px;
+    }
+    .drive-pad button { min-height: 50px; padding: .3rem .35rem; }
+    .drive-pad [data-input="left"] { grid-area: left; }
+    .drive-pad [data-input="right"] { grid-area: right; }
+    .drive-pad [data-input="reverse"] { grid-area: reverse; }
+    .drive-pad [data-input="brake"] { grid-area: brake; }
+    .drive-pad [data-input="throttle"] { grid-area: throttle; }
+  }
+  @media (pointer: coarse) { .drive-keys { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .loading-mark { animation: none; } }
+</style>

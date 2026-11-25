@@ -496,8 +496,10 @@ function inUse(p: Properties): boolean {
   );
 }
 
-function openRoad(p: Properties): Road | null {
-  if (!inUse(p) || (Number(p.hoogteniveau) || 0) !== 0) return null;
+function openRoad(p: Properties, pilot = false): Road | null {
+  if (pilot) {
+    if (String(p.status ?? "in gebruik") !== "in gebruik") return null;
+  } else if (!inUse(p) || (Number(p.hoogteniveau) || 0) !== 0) return null;
   const types = values(p.typeweg);
   const uses = values(p.hoofdverkeersgebruik);
   if (!uses.length || types.includes("autosnelweg")) return null;
@@ -534,21 +536,26 @@ function walkStyle(p: Properties): RouteStyle {
 }
 
 /** Cars drive in their lane on streets that take traffic. */
-function driveStyle(p: Properties): RouteStyle {
-  const road = openRoad(p);
+function driveStyle(p: Properties, pilot = false): RouteStyle {
+  const road = openRoad(p, pilot);
   if (!road) return null;
-  if (!road.mixed && !road.uses.some((use) => use.includes("bus"))) return null;
+  if (!road.mixed && (pilot || !road.uses.some((use) => use.includes("bus")))) return null;
+  // In the pilot a negative weight keeps the source direction of a
+  // separately mapped carriageway or roundabout arc.
+  const direction = pilot && (p.gescheidenrijbaan === "ja" || String(p.fysiekvoorkomen ?? "").includes("rotonde")) ? -1 : 1;
   const lane = half(road, 1.1, 1.6, 2.4, 1.1);
-  if (road.type === "straat") return [lane * M, 1.25];
-  if (road.type === "lokale weg") return [lane * M, 1];
-  if (road.type === "regionale weg" || road.type === "hoofdweg") return [(lane + 0.4) * M, 0.85];
+  if (road.type === "straat") return [lane * M, direction * 1.25];
+  if (road.type === "lokale weg") return [lane * M, direction];
+  if (road.type === "regionale weg" || road.type === "hoofdweg") return [(lane + 0.4) * M, direction * 0.85];
   // Unknown type but mixed traffic: still driveable.
-  return road.mixed ? [lane * M, 0.55] : null;
+  return road.mixed ? [lane * M, direction * 0.55] : null;
 }
 
 /** Trains and trams run on rails at ground level and on bridges. */
-function railStyle(p: Properties): RouteStyle {
-  if (!inUse(p) || (Number(p.hoogteniveau) || 0) < 0) return null;
+function railStyle(p: Properties, pilot = false): RouteStyle {
+  if (pilot) {
+    if (String(p.status ?? "in gebruik") !== "in gebruik") return null;
+  } else if (!inUse(p) || (Number(p.hoogteniveau) || 0) < 0) return null;
   const kind = String(p.typespoorbaan ?? "");
   return [0, kind === "tram" ? 0.7 : kind === "metro" ? 0.5 : 1.3];
 }
@@ -557,8 +564,8 @@ function railStyle(p: Properties): RouteStyle {
  * Cyclists ride the cycle paths first, then the kerb side of ordinary
  * streets, between the cars and the pavement.
  */
-function cycleStyle(p: Properties): RouteStyle {
-  const road = openRoad(p);
+function cycleStyle(p: Properties, pilot = false): RouteStyle {
+  const road = openRoad(p, pilot);
   if (!road || road.uses.every(onFoot)) return null;
   const bike = road.uses.some((use) => use.startsWith("fietsers") || use === "bromfietsers");
   // Red asphalt, or a shared bike and moped path: ride the middle.
@@ -572,7 +579,7 @@ function cycleStyle(p: Properties): RouteStyle {
 }
 
 /** Which centre lines each kind of traffic follows, and the shortest worth having. */
-const ROUTES: Record<MoverKey, [layer: string, style: (p: Properties) => RouteStyle, minLength: number]> = {
+const ROUTES: Record<MoverKey, [layer: string, style: (p: Properties, pilot?: boolean) => RouteStyle, minLength: number]> = {
   walks: ["wegdeel_hartlijn", walkStyle, 4 * M],
   cycles: ["wegdeel_hartlijn", cycleStyle, 6 * M],
   drives: ["wegdeel_hartlijn", driveStyle, 8 * M],
@@ -603,10 +610,11 @@ interface Item {
   draw: () => void;
 }
 
-async function buildGround(
+export async function buildGround(
   col: number,
   row: number,
   signal: AbortSignal,
+  pilot = false,
 ): Promise<Extract<StreetResponse, { part: "ground" }>> {
   const empty = {
     id: 0,
@@ -954,14 +962,15 @@ async function buildGround(
   const routes = Object.fromEntries(
     Object.entries(ROUTES).map(([kind, [layer, style, minLength]]) => {
       const out: number[] = [];
+      if (pilot && kind === "walks") return [kind, null];
       each(layer, (p, feature, paths) => {
-        const styled = feature.type === 2 ? style(p) : null;
+        const styled = feature.type === 2 ? style(p, pilot) : null;
         if (!styled) return;
         for (const path of paths()) {
           const line = tidy(path, false, 0.3 * M);
-          if (line.length < 4 || length(line) < minLength) continue;
+          if (line.length < 4 || (!pilot && length(line) < minLength)) continue;
           const middle = midpoint(line);
-          if (inTile(middle[0], middle[1])) out.push(line.length / 2, ...styled, ...line);
+          if ((pilot && kind === "rails") || inTile(middle[0], middle[1])) out.push(line.length / 2, ...styled, ...line);
         }
       });
       return [kind, out.length ? new Float32Array(out) : null];
@@ -1030,7 +1039,7 @@ function shadeOf(colour: RGB, amount: number): RGB {
   return [shade(colour[0]), shade(colour[1]), shade(colour[2])];
 }
 
-async function buildBuildings(
+export async function buildBuildings(
   col: number,
   row: number,
   signal: AbortSignal,
@@ -1104,7 +1113,7 @@ async function buildBuildings(
 
 // ------------------------------------------------------------- messages --
 
-const scope = self as unknown as {
+const scope = globalThis as unknown as {
   onmessage: ((event: MessageEvent) => void) | null;
   postMessage(message: StreetResponse, transfer: Transferable[]): void;
 };
@@ -1117,7 +1126,7 @@ function buffers(arrays: object | null): Transferable[] {
     .map((array) => (array as Float32Array).buffer);
 }
 
-scope.onmessage = async (event) => {
+if (typeof self !== "undefined") scope.onmessage = async (event) => {
   const message = event.data as StreetRequest | { cancel: number };
   if ("cancel" in message) {
     running.get(message.cancel)?.abort();

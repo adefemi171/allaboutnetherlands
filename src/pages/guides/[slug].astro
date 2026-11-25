@@ -9,16 +9,20 @@ export async function getStaticPaths() {
   const guides = (await getCollection("guides")).sort(
     (a, b) => a.data.order - b.data.order,
   );
-  return guides.map((guide, index) => ({
-    params: { slug: guide.id },
-    props: {
-      guide,
-      step: index + 1,
-      total: guides.length,
-      previous: guides[index - 1] ?? null,
-      next: guides[index + 1] ?? null,
-    },
-  }));
+  const checklist = guides.filter((guide) => !guide.data.supplemental);
+  return guides.map((guide) => {
+    const index = checklist.indexOf(guide);
+    return {
+      params: { slug: guide.id },
+      props: {
+        guide,
+        step: index + 1,
+        total: checklist.length,
+        previous: index >= 0 ? (checklist[index - 1] ?? null) : null,
+        next: index >= 0 ? (checklist[index + 1] ?? null) : null,
+      },
+    };
+  });
 }
 
 const { guide, step, total, previous, next } = Astro.props;
@@ -43,7 +47,7 @@ const host = (url: string) => new URL(url).hostname.replace(/^www\./, "");
   <main id="main" class="wrap guide">
     <header class="guide__head">
       <p class="mono">
-        <a href="/guides/">Guides</a> / {stage.label} · Step {step} of {total}
+        <a href="/guides/">Guides</a>{!data.supplemental && ` / ${stage.label} · Step ${step} of ${total}`}
       </p>
       <h1>{data.title}</h1>
       <p class="guide__summary">{data.summary}</p>
@@ -163,7 +167,7 @@ const host = (url: string) => new URL(url).hostname.replace(/^www\./, "");
       }
     </div>
 
-    <nav class="onward" aria-label="Previous and next guide">
+    <nav class="onward" aria-label="Guide navigation">
       {
         previous ? (
           <a href={`/guides/${previous.id}/`} rel="prev">
@@ -183,7 +187,7 @@ const host = (url: string) => new URL(url).hostname.replace(/^www\./, "");
             <span class="mono">Next · Step {step + 1}</span>
             <strong>{next.data.title}</strong>
           </a>
-        ) : (
+        ) : !data.supplemental && (
           <a class="onward__next" href="/map/">
             <span class="mono">Next</span>
             <strong>Explore the map</strong>

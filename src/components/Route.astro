@@ -11,7 +11,7 @@ interface Props {
 const { level = 3 } = Astro.props;
 const Heading = `h${level}` as "h2" | "h3";
 
-const guides = (await getCollection("guides")).sort(
+const guides = (await getCollection("guides", (guide) => !guide.data.supplemental)).sort(
   (a, b) => a.data.order - b.data.order,
 );
 const stretches = (Object.keys(stages) as Stage[])

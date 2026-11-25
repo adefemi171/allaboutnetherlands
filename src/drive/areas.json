@@ -1,0 +1,29 @@
+[
+  {
+    "id": "utrecht",
+    "center": [52.0630, 5.1439],
+    "name": "Utrecht – Houten",
+    "first": "Utrecht",
+    "last": "Houten",
+    "stops": ["Utrecht Vaartsche Rijn", "Utrecht Lunetten", "Houten"],
+    "modes": ["car", "bike", "walk", "train"]
+  },
+  {
+    "id": "amsterdam",
+    "center": [52.3528, 4.9484],
+    "name": "Amsterdam Oost – Diemen",
+    "first": "Amsterdam Oost",
+    "last": "Diemen",
+    "stops": ["Amsterdam Muiderpoort", "Amsterdam Science Park", "Diemen"],
+    "modes": ["car", "bike", "walk", "train"]
+  },
+  {
+    "id": "scheveningen",
+    "center": [52.1044, 4.2725],
+    "name": "Scheveningen",
+    "first": "the harbour",
+    "last": "the Kurhaus",
+    "stops": ["Scheveningen Harbour", "Keizerstraat", "Kurhaus"],
+    "modes": ["car", "bike", "walk"]
+  }
+]

@@ -16,6 +16,7 @@ const guides = defineCollection({
     stage: z.enum(["plan", "arrive", "settle"]),
     /** Position in the checklist. Lower comes first. */
     order: z.number(),
+    supplemental: z.boolean().default(false),
     /** Id of a place in src/data/places.ts, to pin the guide on the map. */
     place: z.string().optional(),
     updated: z.coerce.date(),
